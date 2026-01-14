@@ -1,0 +1,33 @@
+2026-01-14 09:59:58 | I have started to work on a project called SELAH to build myself a AI Assistant, Dont know if i can finish it, but its DAY 1, GOTTA DO SOMETHING. 
+2026-01-14 10:19:41 | Creating Another Text and timestamp for more data lol
+2026-01-14 10:24:23 | Wow I just learned to convert human data to machine data :)
+2026-01-14 10:25:10 | Feeling excited that SELAH can now understand my thoughts in a structured way.
+2026-01-14 10:26:42 | Tried writing some test logs and seeing how the data loads, very satisfying.
+2026-01-14 10:28:05 | Realized that even small logs can help SELAH learn my daily mood.
+2026-01-14 10:29:30 | I hope by the end of the week I can see some patterns in my entries.
+2026-01-14 10:30:05 | Just experimented with adding more logs, feeling curious about SELAH's abilities.
+2026-01-14 10:32:17 | Noticed that keeping a log is actually motivating, makes me want to be more productive.
+2026-01-14 10:34:50 | Encountered a small error in my code but solved it, feeling accomplished.
+2026-01-14 10:36:28 | Took a short break to stretch, feeling refreshed now.
+2026-01-14 10:38:15 | Trying out some test sentences for SELAH, this is exciting.
+2026-01-14 10:40:42 | Slightly overwhelmed with the amount of things to code, but still pushing forward.
+2026-01-14 10:42:55 | Finally managed to make the logs read correctly into the DataFrame, very happy.
+2026-01-14 10:45:10 | Feeling curious how SELAH will interpret positive vs neutral sentences.
+2026-01-14 10:47:33 | Adding a few more logs to create a richer dataset, it’s fun to see it grow.
+2026-01-14 10:50:05 | Slightly tired but proud of making progress with SELAH.
+2026-01-14 10:52:42 | Experimented with TextBlob for sentiment, works better than expected.
+2026-01-14 10:55:11 | Took notes on mistakes made earlier, learning is happening.
+2026-01-14 10:57:30 | Feeling neutral about the pace, but continuing anyway.
+2026-01-14 11:00:05 | Managed to write a small function to analyze multiple logs, feeling productive.
+2026-01-14 11:02:18 | Realized I forgot to save one log, small mistake but easy to fix.
+2026-01-14 11:05:45 | Enjoying building SELAH, this is a really cool personal AI project.
+2026-01-14 11:08:10 | A bit distracted, need to focus for the next logs.
+2026-01-14 11:10:22 | Feeling motivated again, adding more logs systematically.
+2026-01-14 11:12:55 | Tried writing very short logs to see how sentiment is detected.
+2026-01-14 11:15:30 | I think SELAH can already differentiate my moods somewhat.
+2026-01-14 11:17:05 | Feeling a little tired but proud of consistency.
+2026-01-14 11:20:12 | Adding some neutral logs now for balance in the dataset.
+2026-01-14 11:22:45 | Realized a positive mood entry really boosts motivation.
+2026-01-14 11:25:33 | Slight frustration with some small code bugs, but nothing serious.
+2026-01-14 11:28:05 | Feeling good that I solved yesterday's challenge.
+2026-01-14 11:30:00 | Logging complete for this hour, SELAH is getting more memory.
