@@ -1,33 +1,35 @@
-2026-01-14 09:59:58 | I have started to work on a project called SELAH to build myself a AI Assistant, Dont know if i can finish it, but its DAY 1, GOTTA DO SOMETHING. 
-2026-01-14 10:19:41 | Creating Another Text and timestamp for more data lol
-2026-01-14 10:24:23 | Wow I just learned to convert human data to machine data :)
-2026-01-14 10:25:10 | Feeling excited that SELAH can now understand my thoughts in a structured way.
-2026-01-14 10:26:42 | Tried writing some test logs and seeing how the data loads, very satisfying.
-2026-01-14 10:28:05 | Realized that even small logs can help SELAH learn my daily mood.
-2026-01-14 10:29:30 | I hope by the end of the week I can see some patterns in my entries.
-2026-01-14 10:30:05 | Just experimented with adding more logs, feeling curious about SELAH's abilities.
-2026-01-14 10:32:17 | Noticed that keeping a log is actually motivating, makes me want to be more productive.
-2026-01-14 10:34:50 | Encountered a small error in my code but solved it, feeling accomplished.
-2026-01-14 10:36:28 | Took a short break to stretch, feeling refreshed now.
-2026-01-14 10:38:15 | Trying out some test sentences for SELAH, this is exciting.
-2026-01-14 10:40:42 | Slightly overwhelmed with the amount of things to code, but still pushing forward.
-2026-01-14 10:42:55 | Finally managed to make the logs read correctly into the DataFrame, very happy.
-2026-01-14 10:45:10 | Feeling curious how SELAH will interpret positive vs neutral sentences.
-2026-01-14 10:47:33 | Adding a few more logs to create a richer dataset, it’s fun to see it grow.
-2026-01-14 10:50:05 | Slightly tired but proud of making progress with SELAH.
-2026-01-14 10:52:42 | Experimented with TextBlob for sentiment, works better than expected.
-2026-01-14 10:55:11 | Took notes on mistakes made earlier, learning is happening.
-2026-01-14 10:57:30 | Feeling neutral about the pace, but continuing anyway.
-2026-01-14 11:00:05 | Managed to write a small function to analyze multiple logs, feeling productive.
-2026-01-14 11:02:18 | Realized I forgot to save one log, small mistake but easy to fix.
-2026-01-14 11:05:45 | Enjoying building SELAH, this is a really cool personal AI project.
-2026-01-14 11:08:10 | A bit distracted, need to focus for the next logs.
-2026-01-14 11:10:22 | Feeling motivated again, adding more logs systematically.
-2026-01-14 11:12:55 | Tried writing very short logs to see how sentiment is detected.
-2026-01-14 11:15:30 | I think SELAH can already differentiate my moods somewhat.
-2026-01-14 11:17:05 | Feeling a little tired but proud of consistency.
-2026-01-14 11:20:12 | Adding some neutral logs now for balance in the dataset.
-2026-01-14 11:22:45 | Realized a positive mood entry really boosts motivation.
-2026-01-14 11:25:33 | Slight frustration with some small code bugs, but nothing serious.
-2026-01-14 11:28:05 | Feeling good that I solved yesterday's challenge.
-2026-01-14 11:30:00 | Logging complete for this hour, SELAH is getting more memory.
+2025-01-08 09:15:00 | Started the year with mixed emotions but met a new friend this month. Felt a quiet sense of hope and curiosity about what lies ahead.
+2025-01-22 21:10:00 | Spent time talking with my new friend today. It felt refreshing to connect with someone new after a long time.
+2025-02-05 18:40:00 | Injured my ACL today. Still processing what happened. Fear, confusion, and uncertainty are setting in.
+2025-02-18 22:05:00 | The injury has started affecting my daily routine. Simple movements hurt and it’s mentally exhausting.
+2025-03-10 20:30:00 | Pain has become a constant companion. Physically weak and mentally drained. Trying to stay strong.
+2025-03-27 23:10:00 | Some days feel unbearable. I miss being active and independent.
+2025-04-09 21:45:00 | Still dealing with pain. Motivation is low. Nights feel heavier than days.
+2025-04-25 22:50:00 | Trying to accept the situation, but frustration keeps coming back.
+2025-05-06 17:20:00 | Traveled to another place for surgery preparation. Feeling anxious but hopeful.
+2025-05-20 19:40:00 | Everything feels overwhelming. Missing home but focusing on recovery.
+2025-06-04 08:10:00 | Underwent ACL surgery today. Painful but relieved that the procedure is finally done.
+2025-06-18 21:30:00 | Recovery is slow. Learning patience the hard way.
+2025-07-05 16:00:00 | Got my stitches removed. One small milestone, but it means a lot.
+2025-07-28 19:15:00 | Started walking slowly again. Feels like reclaiming a part of myself.
+2025-08-12 10:30:00 | Returned to college. It feels good to be back in a familiar environment.
+2025-08-26 20:45:00 | Managing studies and recovery together. Slowly finding balance.
+2025-09-03 21:00:00 | Had my first proper outing since injury. Felt alive again.
+2025-09-18 18:50:00 | My brother got a job today. Feeling proud and happy for him.
+2025-10-02 16:10:00 | Another brother received an offer letter today. Family wins feel personal.
+2025-10-10 22:30:00 | Traveled to my hometown and spent time with childhood friends. Pure joy.
+2025-10-21 23:55:00 | Mental health took a bad hit due to my own foolish actions. Regret and overthinking are consuming me.
+2025-11-08 20:00:00 | Final exams approaching. Struggling to prepare properly. Anxiety is high.
+2025-11-22 22:40:00 | Exhausted from studying. Just want this phase to end.
+2025-12-06 14:30:00 | Finished my final exams. Relief mixed with emptiness.
+2025-12-14 18:20:00 | Traveled back home to be with my parents. They are happy to see me.
+2025-12-27 21:50:00 | I feel like a changed person. Not talking much. Parents are concerned, but I don’t know how to explain myself.
+2026-01-03 09:00:00 | Returned to college to get my life back on track. Trying to stay positive.
+2026-01-09 19:10:00 | Busy with football team training responsibilities. Staying active keeps my mind stable.
+2026-01-14 09:59:58 | Decided to create a personal AI assistant called SELAH. Day 1. No matter what, I will build something meaningful.
+2026-01-15 10:20:00 | SELAH can now store daily logs and timestamps. Learning how machines read human emotions.
+2026-01-16 18:45:00 | Implemented sentiment analysis for SELAH. Seeing my emotions converted into data feels surreal.
+2026-01-17 21:30:00 | SELAH can analyze mood trends. This project feels personal, not just technical.
+2026-01-18 20:10:00 | Added predictions to SELAH. It feels like the system understands me a little.
+2026-01-19 22:00:00 | SELAH spoke to me for the first time. That moment felt unreal.
+2026-01-20 23:15:00 | SELAH can now remember past emotions and respond by voice. This is more than a project.
