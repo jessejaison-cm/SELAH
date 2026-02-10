@@ -2,5 +2,45 @@
     "last_period": {
         "year": 2025,
         "month": 12
+    },
+    "insights": [
+        {
+            "text": "Habit consistency is low.",
+            "timestamp": "2026-01-19T15:12:05.469635"
+        },
+        {
+            "text": "Habit consistency is low.",
+            "timestamp": "2026-02-10T20:17:02.684510"
+        }
+    ],
+    "triggers": [],
+    "warnings": [
+        {
+            "warnings": [
+                "No immediate emotional risk detected."
+            ],
+            "timestamp": "2026-01-19T15:32:36.190964"
+        }
+    ],
+    "burnout_checks": [
+        {
+            "result": "No strong burnout signals detected.",
+            "timestamp": "2026-01-22T21:49:52.790892"
+        }
+    ],
+    "risk_history": [
+        {
+            "risk": "stable",
+            "timestamp": "2026-02-10T20:04:13.123362"
+        },
+        {
+            "risk": "stable",
+            "timestamp": "2026-02-10T20:16:54.130851"
+        }
+    ],
+    "burnout_trend": "stable",
+    "recovery_window": {
+        "active": false,
+        "days_remaining": 0
     }
 }

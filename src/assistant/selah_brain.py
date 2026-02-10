@@ -2,12 +2,11 @@ import pandas as pd
 from textblob import TextBlob
 from datetime import datetime, timedelta
 import pyttsx3
-from collections import Counter
 import json
 import os
 import re
 import dateparser
-from selah_reasoner import compare_years, summarize_life
+from collections import Counter
 
 # =========================
 # FILE PATHS
@@ -35,17 +34,17 @@ def speak(text):
     engine.runAndWait()
 
 # =========================
-# JSON HELPERS
+# JSON STORAGE
 # =========================
-def load_json(file_path):
-    if not os.path.exists(file_path) or os.stat(file_path).st_size == 0:
-        with open(file_path, "w") as f:
+def load_json(path):
+    if not os.path.exists(path) or os.stat(path).st_size == 0:
+        with open(path, "w") as f:
             json.dump({}, f)
-    with open(file_path, "r", encoding="utf-8") as f:
+    with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
 
-def save_json(file_path, data):
-    with open(file_path, "w", encoding="utf-8") as f:
+def save_json(path, data):
+    with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=4)
 
 # =========================
@@ -54,300 +53,915 @@ def save_json(file_path, data):
 def load_context():
     return load_json(CONTEXT_FILE)
 
-def save_context(context):
-    save_json(CONTEXT_FILE, context)
+def save_context(ctx):
+    save_json(CONTEXT_FILE, ctx)
+
+def remember_fact(text):
+    ctx = load_context()
+    ctx.setdefault("facts", []).append({
+        "text": text,
+        "timestamp": datetime.now().isoformat()
+    })
+    save_context(ctx)
+    return "Got it. I’ll remember that."
+
+def recall_memory():
+    facts = load_context().get("facts", [])
+    return "\n".join(f"- {f['text']}" for f in facts) if facts else "I don't remember anything yet."
+
+def load_week31_state():
+    ctx = load_context()
+    ctx.setdefault("risk_history", [])
+    ctx.setdefault("burnout_trend", "stable")
+    ctx.setdefault("recovery_window", {
+        "active": False,
+        "days_remaining": 0
+    })
+    save_context(ctx)
+    return ctx
+
 
 # =========================
-# GOALS
+# DAILY LOGS & MOOD ANALYSIS
 # =========================
-def add_goal(goal_text):
+
+def load_logs():
+    if not os.path.exists(LOG_FILE):
+        return pd.DataFrame(columns=["date", "text", "polarity"])
+
+    rows = []
+    with open(LOG_FILE, "r", encoding="utf-8") as f:
+        for line in f:
+            if "|" not in line:
+                continue
+            date_part, text = line.split("|", 1)
+            try:
+                dt = datetime.fromisoformat(date_part.strip())
+                polarity = TextBlob(text.strip()).sentiment.polarity
+                rows.append({
+                    "date": dt,
+                    "text": text.strip(),
+                    "polarity": polarity
+                })
+            except:
+                continue
+
+    return pd.DataFrame(rows)
+
+
+def monthly_mood_summary(year, month):
+    logs = load_logs()
+    if logs.empty:
+        return "I don't have any daily logs yet."
+
+    logs["year"] = logs["date"].dt.year
+    logs["month"] = logs["date"].dt.month
+
+    data = logs[(logs["year"] == year) & (logs["month"] == month)]
+    if data.empty:
+        return "No logs found for that month."
+
+    avg = data["polarity"].mean()
+
+    if avg > 0.2:
+        mood = "mostly positive"
+    elif avg < -0.2:
+        mood = "mostly negative"
+    else:
+        mood = "mostly neutral"
+
+    ctx = load_context()
+    ctx["last_mood_query"] = {"year": year, "month": month}
+    save_context(ctx)
+
+    return (
+        f"In {datetime(year, month, 1).strftime('%B %Y')}, "
+        f"your mood was {mood}."
+    )
+
+
+def previous_month_mood():
+    ctx = load_context()
+    last = ctx.get("last_mood_query")
+
+    if not last:
+        return "I don’t know which month you’re referring to."
+
+    year = last["year"]
+    month = last["month"] - 1
+    if month == 0:
+        month = 12
+        year -= 1
+
+    return monthly_mood_summary(year, month)
+
+
+def parse_month_query(text):
+    text = text.lower()
+
+    if "last month" in text or "previous month" in text:
+        return "PREVIOUS"
+
+    for name, num in MONTHS.items():
+        if name in text:
+            year = re.findall(r"\d{4}", text)
+            return int(year[0]) if year else datetime.now().year, num
+
+    return None
+
+# =========================
+# GOAL SYSTEM
+# =========================
+def add_goal(text):
     goals = load_json(GOALS_FILE)
-    goal_id = str(len(goals) + 1)
-    goals[goal_id] = {
-        "goal": goal_text,
-        "completed": False,
-        "date_added": datetime.now().strftime("%Y-%m-%d")
-    }
+    gid = str(len(goals) + 1)
+    goals[gid] = {"goal": text, "completed": False}
     save_json(GOALS_FILE, goals)
-    return f"Goal added: {goal_text}"
+    return f"Goal added: {text}"
 
 def list_goals():
     goals = load_json(GOALS_FILE)
-    if not goals:
-        return "No goals found."
     return "\n".join(
         f"{gid}. {g['goal']} [{'✅' if g['completed'] else '❌'}]"
         for gid, g in goals.items()
-    )
+    ) if goals else "No goals found."
 
-def complete_goal(goal_id):
+def complete_goal(gid):
     goals = load_json(GOALS_FILE)
-    if goal_id in goals:
-        goals[goal_id]["completed"] = True
+    if gid in goals:
+        goals[gid]["completed"] = True
         save_json(GOALS_FILE, goals)
-        return f"Goal {goal_id} marked as completed."
+        return f"Goal {gid} completed."
     return "Goal not found."
 
 def pending_goals():
+    return [g["goal"] for g in load_json(GOALS_FILE).values() if not g["completed"]]
+
+def goal_insights():
     goals = load_json(GOALS_FILE)
-    pending = [g["goal"] for g in goals.values() if not g["completed"]]
-    return pending if pending else []
+    total = len(goals)
+    completed = sum(1 for g in goals.values() if g["completed"])
+    return f"Goals: {completed}/{total} completed." if total else "No goals yet."
 
 # =========================
-# HABITS
+# HABIT SYSTEM
 # =========================
-def add_habit(habit_text):
+def add_habit(text):
     habits = load_json(HABITS_FILE)
     today = datetime.now().strftime("%Y-%m-%d")
-    habits.setdefault(today, []).append(habit_text)
+    habits.setdefault(today, []).append(text)
     save_json(HABITS_FILE, habits)
-    return f"Habit added: {habit_text}"
+    return f"Habit added: {text}"
 
 def list_habits():
     habits = load_json(HABITS_FILE)
-    if not habits:
-        return "No habits found."
-    return "\n".join(f"{d}: {', '.join(h)}" for d, h in habits.items())
+    return "\n".join(f"{d}: {', '.join(h)}" for d, h in habits.items()) if habits else "No habits found."
 
 def habit_streaks():
     habits = load_json(HABITS_FILE)
-    if not habits:
-        return "No habit data available."
-
     dates = sorted(habits.keys())
-    streak = 1
-    max_streak = 1
-
+    streak = max_streak = 1
     for i in range(1, len(dates)):
-        prev = datetime.fromisoformat(dates[i - 1])
-        curr = datetime.fromisoformat(dates[i])
-        if curr - prev == timedelta(days=1):
+        if datetime.fromisoformat(dates[i]) - datetime.fromisoformat(dates[i-1]) == timedelta(days=1):
             streak += 1
             max_streak = max(max_streak, streak)
         else:
             streak = 1
+    return f"Longest habit streak: {max_streak} days." if dates else "No habit data."
 
-    return f"Your longest habit streak is {max_streak} days."
+def most_common_habit():
+    counter = Counter()
+    for h in load_json(HABITS_FILE).values():
+        counter.update(h)
+    return f"Most common habit: {counter.most_common(1)[0][0]}" if counter else "No habit data."
 
 # =========================
-# REMINDERS
+# REMINDER SYSTEM
 # =========================
-def add_reminder(text, dt_str):
+def add_reminder(text, dt):
     reminders = load_json(REMINDERS_FILE)
     rid = str(len(reminders) + 1)
-    reminders[rid] = {"text": text, "datetime": dt_str, "done": False}
+    reminders[rid] = {"text": text, "datetime": dt, "done": False}
     save_json(REMINDERS_FILE, reminders)
-    return f"Reminder added: {text} at {dt_str}"
+    return f"Reminder added: {text}"
 
-def list_reminders(date=None, only_pending=False):
+def list_reminders(date=None):
     reminders = load_json(REMINDERS_FILE)
     out = []
-
     for rid, r in reminders.items():
-        if only_pending and r["done"]:
+        if date and not r["datetime"].startswith(date):
             continue
-        if date is None or r["datetime"].startswith(date):
-            status = "✅" if r["done"] else "❌"
-            out.append(f"{rid}. {r['text']} at {r['datetime']} [{status}]")
-
-    return "\n".join(out) if out else "No reminders found."
-
-def complete_reminder(reminder_id):
-    reminders = load_json(REMINDERS_FILE)
-    if reminder_id in reminders:
-        reminders[reminder_id]["done"] = True
-        save_json(REMINDERS_FILE, reminders)
-        return f"Reminder {reminder_id} marked as completed."
-    return "Reminder not found."
+        out.append(f"{rid}. {r['text']} [{ '✅' if r['done'] else '❌' }]")
+    return "\n".join(out) if out else "No reminders."
 
 def parse_reminder_command(text):
     m = re.search(r"remind me to (.+)", text, re.I)
     if not m:
         return None, None
-
-    remainder = m.group(1)
-    dt = dateparser.parse(remainder, settings={"PREFER_DATES_FROM": "future"})
-    if not dt:
-        return None, None
-
-    return remainder, dt.strftime("%Y-%m-%d %H:%M:%S")
+    dt = dateparser.parse(m.group(1), settings={"PREFER_DATES_FROM": "future"})
+    return m.group(1), dt.strftime("%Y-%m-%d %H:%M:%S") if dt else (None, None)
 
 # =========================
-# LOGS + MOOD INTELLIGENCE
+# DAILY PLANNING
 # =========================
-def load_logs():
-    rows = []
-    if not os.path.exists(LOG_FILE):
-        return pd.DataFrame(rows)
-    with open(LOG_FILE) as f:
-        for line in f:
-            if "|" in line:
-                ts, txt = line.split("|", 1)
-                rows.append({
-                    "timestamp": pd.to_datetime(ts.strip()),
-                    "text": txt.strip()
-                })
-    return pd.DataFrame(rows)
-
-def get_sentiment(text):
-    p = TextBlob(text).sentiment.polarity
-    return "Positive" if p > 0.1 else "Negative" if p < -0.1 else "Neutral"
-
-def summarize_mood_by_period(df, year, month=None):
-    df = df[df["timestamp"].dt.year == year]
-    if month:
-        df = df[df["timestamp"].dt.month == month]
-    if df.empty:
-        return "I do not have enough data for that time period."
-    mood = df["text"].apply(get_sentiment).value_counts().idxmax()
-    return f"Your mood during that time was mostly {mood.lower()}."
-
-def weekly_mood_summary(df):
-    last_week = datetime.now() - timedelta(days=7)
-    df = df[df["timestamp"] >= last_week]
-    if df.empty:
-        return "No logs for the past week."
-    mood = df["text"].apply(get_sentiment).value_counts().idxmax()
-    return f"Your mood over the last week was mostly {mood.lower()}."
-
-def stress_check(df):
-    last_week = datetime.now() - timedelta(days=7)
-    df = df[df["timestamp"] >= last_week]
-    if df.empty:
-        return "I don't have enough recent data."
-    sentiments = df["text"].apply(TextBlob).apply(lambda t: t.sentiment.polarity)
-    avg = sentiments.mean()
-    if avg < -0.2:
-        return "You seem more stressed or negative lately."
-    return "You seem emotionally stable lately."
-
-# =========================
-# DATE PARSING + TEMPORAL
-# =========================
-def parse_month_year(text):
-    text = text.lower()
-    year = None
-    month = None
-    for m, num in MONTHS.items():
-        if m in text:
-            month = num
-    y = re.search(r"(20\d{2})", text)
-    if y:
-        year = int(y.group(1))
-    return year, month
-
-def shift_period(year, month, direction):
-    if not year:
-        return None, None
-    if not month:
-        month = 1
-    if direction == "previous":
-        month -= 1
-        if month == 0:
-            month = 12
-            year -= 1
-    elif direction == "next":
-        month += 1
-        if month == 13:
-            month = 1
-            year += 1
-    return year, month
-
-# =========================
-# DAILY SUMMARY FOR WEEK 20
-# =========================
-def daily_summary():
+def plan_my_day():
     today = datetime.now().strftime("%Y-%m-%d")
-    logs = load_logs()
-    df_today = logs[logs["timestamp"].dt.date == datetime.now().date()]
-    mood = df_today["text"].apply(get_sentiment).value_counts().idxmax() if not df_today.empty else "Neutral"
-
-    habits = load_json(HABITS_FILE).get(today, [])
-    goals = [g["goal"] for g in load_json(GOALS_FILE).values() if not g["completed"]]
-
-    reminders = list_reminders(date=today)
-    return f"Daily Summary:\nMood: {mood}\nHabits: {', '.join(habits) if habits else 'None'}\nPending Goals: {', '.join(goals) if goals else 'None'}\nReminders:\n{reminders if reminders else 'None'}"
+    return "\n".join([
+        "Today's Plan:",
+        f"Goals: {pending_goals()[0] if pending_goals() else 'None'}",
+        f"Habits: {', '.join(load_json(HABITS_FILE).get(today, []))}",
+        f"Reminders:\n{list_reminders(today)}"
+    ])
 
 # =========================
-# COMMAND HANDLER — WEEK 20
+# REFLECTION & INSIGHTS
+# =========================
+def reflect():
+    return "Reflection:\n- What helped you today?\n- What drained you?"
+
+def extract_insights():
+    insights = []
+    if len(load_json(HABITS_FILE)) < 3:
+        insights.append("Habit consistency is low.")
+    if len(pending_goals()) >= 3:
+        insights.append("You may be overloading goals.")
+    ctx = load_context()
+    ctx.setdefault("insights", []).extend(
+        {"text": i, "timestamp": datetime.now().isoformat()} for i in insights
+    )
+    save_context(ctx)
+    return insights or ["No strong insights yet."]
+
+def list_insights():
+    return "\n".join(i["text"] for i in load_context().get("insights", [])) or "No insights yet."
+
+# =========================
+# VALUES & DECISION INTELLIGENCE
+# =========================
+def add_value(value):
+    ctx = load_context()
+    ctx.setdefault("values", []).append(value)
+    save_context(ctx)
+    return f"Value added: {value}"
+
+def list_values():
+    values = load_context().get("values", [])
+    return "\n".join(f"- {v}" for v in values) if values else "No values defined."
+
+def evaluate_decision(text):
+    values = load_context().get("values", [])
+    goals = pending_goals()
+    return (
+        f"Decision: {text}\n"
+        f"Values: {', '.join(values) if values else 'None'}\n"
+        f"Consider alignment with long-term consistency."
+    )
+
+# =========================
+# EMOTIONAL TREND ANALYSIS
+# =========================
+
+def emotional_trend(days=14):
+    logs = load_logs()
+    if logs.empty:
+        return "I don’t have enough data yet."
+
+    cutoff = datetime.now() - timedelta(days=days)
+    recent = logs[logs["date"] >= cutoff]
+
+    if len(recent) < 5:
+        return "Not enough recent data to detect a trend."
+
+    avg = recent["polarity"].mean()
+
+    if avg > 0.15:
+        trend = "improving"
+    elif avg < -0.15:
+        trend = "declining"
+    else:
+        trend = "stable"
+
+    ctx = load_context()
+    ctx["emotional_trend"] = {
+        "trend": trend,
+        "days": days,
+        "timestamp": datetime.now().isoformat()
+    }
+    save_context(ctx)
+
+    return f"Over the last {days} days, your emotional trend looks **{trend}**."
+
+def update_risk_history(risk_label):
+    ctx = load_week31_state()
+    ctx["risk_history"].append({
+        "risk": risk_label,
+        "timestamp": datetime.now().isoformat()
+    })
+    ctx["risk_history"] = ctx["risk_history"][-14:]  # keep last 14 entries
+    save_context(ctx)
+
+
+
+# =========================
+# BURNOUT DETECTION
+# =========================
+
+def detect_burnout():
+    logs = load_logs()
+    if logs.empty:
+        return "I don’t have enough emotional data yet."
+
+    recent = logs[logs["date"] >= datetime.now() - timedelta(days=10)]
+
+    if len(recent) < 5:
+        return "Not enough data to assess burnout."
+
+    negative_days = recent[recent["polarity"] < -0.2]
+
+    if len(negative_days) >= 5:
+        insight = "You may be experiencing early burnout signs."
+    else:
+        insight = "No strong burnout signals detected."
+
+    ctx = load_context()
+    ctx.setdefault("burnout_checks", []).append({
+        "result": insight,
+        "timestamp": datetime.now().isoformat()
+    })
+    save_context(ctx)
+
+    return insight
+
+def burnout_prediction():
+    ctx = load_week31_state()
+    risks = [r["risk"] for r in ctx["risk_history"]]
+
+    high_risk = risks.count("high")
+    mild_risk = risks.count("mild")
+
+    if high_risk >= 3:
+        ctx["burnout_trend"] = "high"
+        save_context(ctx)
+        return "🔴 Burnout likely within 7–10 days if patterns continue."
+
+    if mild_risk >= 4:
+        ctx["burnout_trend"] = "rising"
+        save_context(ctx)
+        return "🟡 Burnout probability rising. Consider slowing down."
+
+    ctx["burnout_trend"] = "stable"
+    save_context(ctx)
+    return "🟢 Burnout risk currently stable."
+
+def predict_burnout_window():
+    ctx = load_context()
+    risk_history = ctx.get("risk_history", [])[-10:]
+
+    if len(risk_history) < 3:
+        return "Burnout prediction: Insufficient data."
+
+    levels = [r["level"] for r in risk_history]
+    high_count = levels.count("high")
+    mild_count = levels.count("mild")
+
+    goals = load_json(GOALS_FILE)
+    pending_goals = [g for g in goals.values() if not g["completed"]]
+
+    habit_days = sorted(load_json(HABITS_FILE).keys())
+    continuous_habits = 0
+    for i in range(1, len(habit_days)):
+        if datetime.fromisoformat(habit_days[i]) - datetime.fromisoformat(habit_days[i-1]) == timedelta(days=1):
+            continuous_habits += 1
+        else:
+            continuous_habits = 0
+
+    signals = 0
+    if high_count >= 2:
+        signals += 1
+    if mild_count >= 3:
+        signals += 1
+    if len(pending_goals) >= 4:
+        signals += 1
+    if continuous_habits >= 5:
+        signals += 1
+
+    if signals >= 2:
+        return (
+            "⚠️ Burnout Risk Forecast:\n"
+            "- Pattern indicates rising fatigue\n"
+            "- Burnout likely in ~3–5 days if load continues\n"
+            "- Recommendation: initiate recovery mode early"
+        )
+
+    return "🟢 Burnout forecast: No immediate risk detected."
+
+
+# =========================
+# EMOTIONAL FORECASTING
+# =========================
+
+def emotional_forecast(days_back=14, forecast_days=3):
+    logs = load_logs()
+    if logs.empty:
+        return "I don’t have enough data to forecast your mood yet."
+
+    recent = logs[logs["date"] >= datetime.now() - timedelta(days=days_back)]
+
+    if len(recent) < 6:
+        return "Not enough recent emotional data to generate a forecast."
+
+    avg = recent["polarity"].mean()
+    slope = recent["polarity"].diff().mean()
+
+    if avg < -0.2 and slope < 0:
+        outlook = "likely to worsen"
+    elif avg > 0.2 and slope > 0:
+        outlook = "likely to improve"
+    else:
+        outlook = "likely to remain stable"
+
+    forecast = (
+        f"Over the next {forecast_days} days, your emotional state is "
+        f"**{outlook}** based on recent patterns."
+    )
+
+    ctx = load_context()
+    ctx.setdefault("forecasts", []).append({
+        "outlook": outlook,
+        "avg_polarity": avg,
+        "trend": slope,
+        "timestamp": datetime.now().isoformat()
+    })
+    save_context(ctx)
+
+    return forecast
+
+# =========================
+# SELF-INTERVENTION ENGINE
+# =========================
+
+def suggest_intervention():
+    logs = load_logs()
+    habits = load_json(HABITS_FILE)
+    goals = load_json(GOALS_FILE)
+
+    suggestions = []
+
+    if not logs.empty:
+        recent = logs[logs["date"] >= datetime.now() - timedelta(days=5)]
+        if recent["polarity"].mean() < -0.2:
+            suggestions.append("Reduce cognitive load — do one small, easy task today.")
+
+    if len(pending_goals()) >= 3:
+        suggestions.append("Pause goal expansion. Focus on completion, not ambition.")
+
+    if not habits:
+        suggestions.append("Anchor one grounding habit (walk, breath, journaling).")
+
+    if not suggestions:
+        suggestions.append("Maintain current rhythm. You’re stable right now.")
+
+    ctx = load_context()
+    ctx.setdefault("interventions", []).append({
+        "suggestions": suggestions,
+        "timestamp": datetime.now().isoformat()
+    })
+    save_context(ctx)
+
+    return "Suggested Interventions:\n" + "\n".join(f"- {s}" for s in suggestions)
+
+# =========================
+# IDENTITY PATTERN ENGINE
+# =========================
+
+def extract_identity_patterns():
+    logs = load_logs()
+    if logs.empty or len(logs) < 10:
+        return ["Not enough data to extract identity patterns yet."]
+
+    patterns = []
+    logs = logs.sort_values("date")
+
+    for i in range(1, len(logs)):
+        prev = logs.iloc[i - 1]
+        curr = logs.iloc[i]
+
+        if prev["polarity"] < -0.3 and curr["polarity"] < -0.3:
+            patterns.append("When emotionally low → tendency to stay low")
+
+        if prev["polarity"] < -0.2 and curr["polarity"] > 0.2:
+            patterns.append("Emotional recovery after reflection or rest")
+
+    counter = Counter(patterns)
+    dominant = [p for p, c in counter.items() if c >= 2]
+
+    ctx = load_context()
+    ctx["identity_patterns"] = dominant
+    save_context(ctx)
+
+    return dominant if dominant else ["No dominant identity patterns detected yet."]
+
+# =========================
+# EMOTIONAL TRIGGERS
+# =========================
+
+def detect_triggers():
+    logs = load_logs()
+    if logs.empty:
+        return ["No data available to detect triggers."]
+
+    trigger_words = []
+    for text in logs["text"]:
+        if re.search(r"(tired|exhausted|overwhelmed|stressed)", text, re.I):
+            trigger_words.append("Fatigue / overload")
+
+        if re.search(r"(alone|ignored|unseen)", text, re.I):
+            trigger_words.append("Social disconnection")
+
+        if re.search(r"(fail|behind|not enough)", text, re.I):
+            trigger_words.append("Self-judgment")
+
+    counter = Counter(trigger_words)
+    triggers = [t for t, c in counter.items() if c >= 2]
+
+    ctx = load_context()
+    ctx["triggers"] = triggers
+    save_context(ctx)
+
+    return triggers if triggers else ["No strong emotional triggers detected yet."]
+
+def emotional_risk_monitor(days=14):
+    if not os.path.exists(LOG_FILE):
+        return "No logs available."
+
+    with open(LOG_FILE, "r", encoding="utf-8") as f:
+        raw = f.read()
+
+    entries = re.split(r"\n(?=\d{4}-\d{2}-\d{2})", raw)
+    recent = entries[-days:]
+
+    sentiments = []
+    pressure_words = ["behind", "should", "must", "need to", "have to"]
+
+    pressure_count = 0
+    for entry in recent:
+        blob = TextBlob(entry)
+        sentiments.append(blob.sentiment.polarity)
+        for w in pressure_words:
+            pressure_count += entry.lower().count(w)
+
+    if len(sentiments) < 5:
+        return "Not enough recent data for risk analysis."
+
+    trend = sum(sentiments[-7:]) / 7 - sum(sentiments[:7]) / 7
+
+    if trend < -0.15 and pressure_count >= 5:
+        return (
+            "⚠️ Emotional Risk Detected:\n"
+            "Sustained effort with declining emotional tone.\n"
+            "Consider reducing load or adding recovery time."
+        )
+
+    if trend < -0.08:
+        return "🟡 Mild fatigue trend detected. Stay aware."
+
+    return "🟢 Emotional state stable."
+
+
+# =========================
+# EARLY WARNING SYSTEM
+# =========================
+
+def early_warning():
+    ctx = load_context()
+    patterns = ctx.get("identity_patterns", [])
+    triggers = ctx.get("triggers", [])
+
+    warnings = []
+
+    if "Fatigue / overload" in triggers:
+        warnings.append("⚠️ When tired, you are more likely to spiral emotionally.")
+
+    if "When emotionally low → tendency to stay low" in patterns:
+        warnings.append("⚠️ Emotional inertia detected. Early interruption is critical.")
+
+    if not warnings:
+        warnings.append("No immediate emotional risk detected.")
+
+    ctx.setdefault("warnings", []).append({
+        "warnings": warnings,
+        "timestamp": datetime.now().isoformat()
+    })
+    save_context(ctx)
+
+    return "Early Warning Report:\n" + "\n".join(warnings)
+
+def early_warning_nudge():
+    ctx = load_week31_state()
+    risks = [r["risk"] for r in ctx["risk_history"]]
+
+    if risks.count("mild") >= 3:
+        return "⚠️ Early warning: Emotional load increasing. Plan a lighter day."
+
+    if ctx["burnout_trend"] == "rising":
+        return "⚠️ You’re trending toward burnout. Slow goal velocity."
+
+    return None
+
+
+# =========================
+# RECOVERY RECOMMENDATION SYSTEM
+# =========================
+def recovery_recommendation():
+    # Call emotional risk monitor safely (no arguments)
+    risk = emotional_risk_monitor()
+
+    goals = load_json(GOALS_FILE)
+    pending = [g for g in goals.values() if not g["completed"]]
+
+    habit_days = load_json(HABITS_FILE)
+    recent_habits = list(habit_days.keys())[-5:]
+
+    recommendation = []
+
+    if "⚠️ Emotional Risk Detected" in risk:
+        recommendation.append(
+            "🔴 High Load Detected:\n"
+            "- Pause outcome-based goals for 72 hours\n"
+            "- Maintain only identity habits (sleep, movement)\n"
+            "- Do not add new goals"
+        )
+
+    elif "🟡 Mild fatigue" in risk:
+        recommendation.append(
+            "🟡 Mild Fatigue Response:\n"
+            "- Reduce goal intensity by ~20%\n"
+            "- Keep habits lightweight\n"
+            "- Schedule one low-effort recovery activity"
+        )
+
+    else:
+        recommendation.append(
+            "🟢 System Stable:\n"
+            "- Maintain current goals\n"
+            "- No recovery adjustment needed"
+        )
+
+    if len(pending) >= 4:
+        recommendation.append("⚠️ You may be carrying too many active goals.")
+
+    if len(recent_habits) >= 5 and len(set(recent_habits)) == 5:
+        recommendation.append("⚠️ No habit rest days detected.")
+
+    if "⚠️ Emotional Risk Detected" in risk:
+        update_risk_history("high")
+        adaptive_recovery_adjustment("high")
+
+    elif "🟡 Mild fatigue" in risk:
+        update_risk_history("mild")
+        adaptive_recovery_adjustment("mild")
+
+    else:
+        update_risk_history("stable")
+        adaptive_recovery_adjustment("stable")
+
+    recommendation.append(resume_deferred_goal())
+    return "\n".join(recommendation)
+
+
+
+
+def adaptive_recovery_adjustment(risk_label):
+    ctx = load_week31_state()
+    recovery = ctx["recovery_window"]
+
+    if risk_label == "high":
+        recovery["active"] = True
+        recovery["days_remaining"] = max(recovery["days_remaining"], 3)
+
+    elif risk_label == "mild":
+        recovery["active"] = True
+        recovery["days_remaining"] = max(recovery["days_remaining"], 1)
+
+    else:
+        if recovery["days_remaining"] > 0:
+            recovery["days_remaining"] -= 1
+        if recovery["days_remaining"] <= 0:
+            recovery["active"] = False
+
+    ctx["recovery_window"] = recovery
+    save_context(ctx)
+
+# -----------------------------
+# Goal State Normalization & Rebalancing (Week 33)
+# -----------------------------
+
+def normalize_goal_states():
+    goals = load_json(GOALS_FILE)
+    updated = False
+
+    for g in goals.values():
+        if "state" not in g:
+            g["state"] = "completed" if g.get("completed") else "active"
+            updated = True
+
+    if updated:
+        save_json(GOALS_FILE, goals)
+
+def auto_rebalance_goals():
+    normalize_goal_states()
+    forecast = predict_burnout_window()
+
+    if "Burnout Risk Forecast" not in forecast:
+        return "🟢 Goals stable. No rebalancing needed."
+
+    goals = load_json(GOALS_FILE)
+    deferred = []
+
+    for gid, g in goals.items():
+        if g["state"] == "active" and not g.get("completed"):
+            g["state"] = "deferred"
+            deferred.append(g["goal"])
+            break  
+
+    save_json(GOALS_FILE, goals)
+
+    if not deferred:
+        return "⚠️ Burnout risk detected, but no active goals to defer."
+
+    return (
+        "⚖️ Goal Rebalanced Automatically:\n"
+        f"- Deferred: {deferred[0]}\n"
+        "- Reason: rising burnout risk\n"
+        "- This goal will resume after recovery"
+    )
+
+# -----------------------------
+# Goal Resumption Intelligence (Week 34)
+# -----------------------------
+
+def is_system_stable_recently(days=3):
+    """
+    Checks if emotional system has been stable for the last N checks
+    """
+    ctx = load_context()
+    history = ctx.get("risk_history", [])
+
+    if len(history) < days:
+        return False
+
+    recent = history[-days:]
+    return all(r["level"] == "stable" for r in recent)
+
+
+def resume_deferred_goal():
+    """
+    Resumes one deferred goal if recovery is sustained
+    """
+    if not is_system_stable_recently():
+        return "⏳ Recovery still in progress. Goals remain deferred."
+
+    goals = load_json(GOALS_FILE)
+
+    for g in goals.values():
+        if g.get("state") == "deferred":
+            g["state"] = "active"
+            save_json(GOALS_FILE, goals)
+
+            return (
+                "🟢 Goal Resumed Automatically:\n"
+                f"- {g['goal']}\n"
+                "- Reason: emotional stability maintained"
+            )
+
+    return "🟢 No deferred goals to resume."
+
+
+# =========================
+# COMMAND ROUTER (SINGLE SOURCE OF TRUTH)
 # =========================
 def handle_command(command, speak_out=True):
     text = command.lower()
-    context = load_context()
 
-    # -------- MOOD + TEMPORAL
-    if "how was i" in text or "what about" in text or "my mood" in text:
-        df = load_logs()
-        year, month = parse_month_year(text)
-        last = context.get("last_period")
-        if "previous" in text or "last month" in text:
-            if last:
-                year, month = shift_period(last["year"], last.get("month"), "previous")
-        elif "next" in text:
-            if last:
-                year, month = shift_period(last["year"], last.get("month"), "next")
-        elif not year and last:
-            year, month = last["year"], last.get("month")
-        response = summarize_mood_by_period(df, year, month)
-        context["last_period"] = {"year": year, "month": month}
-        save_context(context)
+    if text.startswith("remember that"):
+        response = remember_fact(command.replace("remember that", "").strip())
 
-    # -------- WEEKLY / STRESS / HABITS / REMINDERS / LIFE / COMPARE
-    elif "last week" in text or "my week" in text:
-        df = load_logs()
-        response = weekly_mood_summary(df)
-        context["last_summary"] = "weekly"
-        save_context(context)
+    elif "what do you remember" in text:
+        response = recall_memory()
 
-    elif "stressed" in text or "how am i lately" in text:
-        df = load_logs()
-        response = stress_check(df)
-
-    elif "habit streak" in text or "consistent" in text:
-        response = habit_streaks()
-
-    elif "pending reminders" in text:
-        response = list_reminders(only_pending=True)
-
-    elif "summarize my life" in text:
-        response = summarize_life()
-
-    elif "compare" in text:
-        years = re.findall(r"(20\d{2})", text)
-        response = compare_years(int(years[0]), int(years[1])) if len(years) == 2 else "Specify two years."
-
-    elif "daily summary" in text:
-        response = daily_summary()
-
-    # -------- REMINDERS
-    elif "remind me to" in text:
-        r, dt = parse_reminder_command(command)
-        response = add_reminder(r, dt) if r else "Could not parse reminder."
-
-    # -------- GOALS
     elif text.startswith("add goal"):
-        response = add_goal(command.split(":", 1)[1].strip())
-    elif text.startswith("complete goal"):
-        goal_id = text.split()[-1]
-        response = complete_goal(goal_id)
-    elif "show my goals" in text or "list goals" in text:
+        response = add_goal(command.split(":",1)[1].strip())
+
+    elif "show my goals" in text:
         response = list_goals()
 
-    # -------- HABITS
-    elif text.startswith("add habit"):
-        response = add_habit(command.split(":", 1)[1].strip())
-    elif "show my habits" in text:
-        response = list_habits()
+    elif "complete goal" in text:
+        response = complete_goal(re.findall(r"\d+", text)[0])
 
-    # -------- REMINDER LIST
+    elif text.startswith("add habit"):
+        response = add_habit(command.split(":",1)[1].strip())
+
+    elif "habit streak" in text:
+        response = habit_streaks()
+
+    elif "most common habit" in text:
+        response = most_common_habit()
+
+    elif "plan my day" in text:
+        response = plan_my_day()
+
+    elif "reflect" in text:
+        response = reflect()
+
+    elif "analyze me" in text:
+        response = "\n".join(extract_insights())
+
+    elif "what insights" in text:
+        response = list_insights()
+
+    elif text.startswith("add value"):
+        response = add_value(command.split(":",1)[1].strip())
+
+    elif "show my values" in text:
+        response = list_values()
+
+    elif text.startswith("should i"):
+        response = evaluate_decision(command)
+
+    elif "remind me to" in text:
+        r, dt = parse_reminder_command(command)
+        response = add_reminder(r, dt) if r else "Couldn't parse reminder."
+
     elif "show my reminders" in text:
         response = list_reminders()
 
+    elif "how was i last month" in text or "previous month" in text:
+        response = previous_month_mood()
+
+    elif "how was i in" in text or "analyze my mood" in text:
+        parsed = parse_month_query(text)
+        if parsed == "PREVIOUS":
+            response = previous_month_mood()
+        elif parsed:
+            year, month = parsed
+            response = monthly_mood_summary(year, month)
+        else:
+            response = "Tell me a month and year, like 'January 2025'."
+
+    elif "how am i trending" in text or "emotional trend" in text:
+        response = emotional_trend()
+        
+    elif "am i burning out" in text or "burnout" in text:
+        response = detect_burnout()
+
+    elif "forecast my mood" in text or "how will i feel" in text:
+        response = emotional_forecast()
+
+    elif "what should i do right now" in text or "help me stabilize" in text:
+        response = suggest_intervention()
+
+    elif "analyze my patterns" in text:
+        response = "\n".join(extract_identity_patterns())
+
+    elif "what triggers me" in text:
+        response = "\n".join(detect_triggers())
+
+    elif "warn me" in text or "early warning" in text:
+        response = early_warning()
+
+    elif "emotional risk" in text or "how am i doing lately" in text:
+        response = emotional_risk_monitor()
+
+    elif "what should i do" in text or "recovery" in text:
+        response = recovery_recommendation()
+
+    elif "am i close to burnout" in text:
+        response = burnout_prediction()
+
+    elif "do i need rest" in text:
+        response = early_warning_nudge() or "🟢 No immediate recovery needed."
+
+    elif "how stable am i emotionally" in text:
+        response = f"Current emotional stability: {load_week31_state()['burnout_trend']}"
+
+    elif "burnout risk" in text or "predict burnout" in text:
+        response = predict_burnout_window()
+
+    elif "rebalance goals" in text:
+        response = auto_rebalance_goals()
+
+    elif "goal status" in text:
+        normalize_goal_states()
+        goals = load_json(GOALS_FILE)
+        response = "\n".join(
+            f"{i}. {g['goal']} ({g['state']})"
+            for i, g in goals.items()
+        )
+        
     else:
-        response = "I am still learning to reason about that."
+        response = "I am still learning."
 
     if speak_out:
         speak(response)
-
     print("🤖 SELAH:", response)
     return response
