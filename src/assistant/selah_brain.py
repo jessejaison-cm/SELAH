@@ -1,8 +1,10 @@
+from pydoc import text
 import pandas as pd
 from textblob import TextBlob
 from datetime import datetime, timedelta
 import pyttsx3
 import json
+import math
 import os
 import re
 import dateparser
@@ -13,12 +15,18 @@ from web.web_query import handle_web_query
 # =========================
 # FILE PATHS
 # =========================
-LOG_FILE = "data/daily_logs.txt"
-GOALS_FILE = "data/goals.json"
-HABITS_FILE = "data/habits.json"
-REMINDERS_FILE = "data/reminders.json"
-CONTEXT_FILE = "data/context.json"
+# Get absolute path to /src directory
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+# Data folder inside src
+DATA_DIR = os.path.join(BASE_DIR, "data")
+
+# File paths (same variable names, so no other code breaks)
+LOG_FILE = os.path.join(BASE_DIR, "data", "daily_logs.txt")
+GOALS_FILE = os.path.join(BASE_DIR, "data", "goals.json")
+HABITS_FILE = os.path.join(BASE_DIR, "data", "habits.json")
+REMINDERS_FILE = os.path.join(BASE_DIR, "data", "reminders.json")
+CONTEXT_FILE = os.path.join(BASE_DIR, "data", "context.json")
 MONTHS = {
     "january": 1, "february": 2, "march": 3, "april": 4,
     "may": 5, "june": 6, "july": 7, "august": 8,
@@ -38,16 +46,22 @@ def speak(text):
 # =========================
 # JSON STORAGE
 # =========================
-def load_json(path):
-    if not os.path.exists(path) or os.stat(path).st_size == 0:
-        with open(path, "w") as f:
-            json.dump({}, f)
-    with open(path, "r", encoding="utf-8") as f:
-        return json.load(f)
-
 def save_json(path, data):
+    # Make sure the folder exists
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    # Save the dictionary to JSON
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=4)
+
+
+def load_json(path):
+    if not os.path.exists(path):
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w") as f:
+            json.dump({}, f)
+
+    with open(path, "r") as f:
+        return json.load(f)
 
 # =========================
 # CONTEXT MEMORY
@@ -88,6 +102,7 @@ def load_week31_state():
 # =========================
 
 def load_logs():
+    print("READING FROM:", os.path.abspath(LOG_FILE))
     if not os.path.exists(LOG_FILE):
         return pd.DataFrame(columns=["date", "text", "polarity"])
 
@@ -96,23 +111,26 @@ def load_logs():
         for line in f:
             if "|" not in line:
                 continue
+
             date_part, text = line.split("|", 1)
-            try:
-                dt = datetime.fromisoformat(date_part.strip())
-                polarity = TextBlob(text.strip()).sentiment.polarity
-                rows.append({
-                    "date": dt,
-                    "text": text.strip(),
-                    "polarity": polarity
-                })
-            except:
+
+            dt = pd.to_datetime(date_part.strip(), errors="coerce")
+            if pd.isna(dt):
                 continue
+
+            polarity = TextBlob(text.strip()).sentiment.polarity
+
+            rows.append({
+                "date": dt,
+                "text": text.strip(),
+                "polarity": polarity
+            })
 
     return pd.DataFrame(rows)
 
-
 def monthly_mood_summary(year, month):
     logs = load_logs()
+
     if logs.empty:
         return "I don't have any daily logs yet."
 
@@ -120,10 +138,14 @@ def monthly_mood_summary(year, month):
     logs["month"] = logs["date"].dt.month
 
     data = logs[(logs["year"] == year) & (logs["month"] == month)]
+
     if data.empty:
         return "No logs found for that month."
 
     avg = data["polarity"].mean()
+
+    if math.isnan(avg):
+        return "I couldn't analyze your mood for that month."
 
     if avg > 0.2:
         mood = "mostly positive"
@@ -143,20 +165,18 @@ def monthly_mood_summary(year, month):
 
 
 def previous_month_mood():
-    ctx = load_context()
-    last = ctx.get("last_mood_query")
-
-    if not last:
-        return "I don’t know which month you’re referring to."
-
-    year = last["year"]
-    month = last["month"] - 1
-    if month == 0:
-        month = 12
-        year -= 1
-
+    today = datetime.now()
+    
+    # Go to first day of this month
+    first_day_this_month = today.replace(day=1)
+    
+    # Go one day back → lands in previous month
+    last_day_previous_month = first_day_this_month - timedelta(days=1)
+    
+    year = last_day_previous_month.year
+    month = last_day_previous_month.month
+    
     return monthly_mood_summary(year, month)
-
 
 def parse_month_query(text):
     text = text.lower()
@@ -1322,6 +1342,14 @@ def handle_command(command, speak_out=True):
     elif "how was i last month" in text or "previous month" in text:
         response = previous_month_mood()
 
+    elif re.match(r"^[a-zA-Z]+\s+\d{4}$", text.strip()):
+        parsed = parse_month_query(text)
+        if parsed:
+            year, month = parsed
+            response = monthly_mood_summary(year, month)
+        else:
+            response = "Tell me a valid month and year like 'January 2026'."
+
     elif "how was i in" in text or "analyze my mood" in text:
         parsed = parse_month_query(text)
         if parsed == "PREVIOUS":
@@ -1331,7 +1359,7 @@ def handle_command(command, speak_out=True):
             response = monthly_mood_summary(year, month)
         else:
             response = "Tell me a month and year, like 'January 2025'."
-
+    
     elif "how am i trending" in text or "emotional trend" in text:
         response = emotional_trend()
         

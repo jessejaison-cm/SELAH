@@ -42,5 +42,9 @@
     "recovery_window": {
         "active": false,
         "days_remaining": 0
+    },
+    "last_mood_query": {
+        "year": 2026,
+        "month": 1
     }
 }
