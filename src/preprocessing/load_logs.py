@@ -13,7 +13,7 @@ def load_logs():
                     "timestamp": timestamp.strip(),
                     "text": text.strip()
                 })
-
+    
     df = pd.DataFrame(data)
     return df
 

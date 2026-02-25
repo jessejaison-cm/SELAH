@@ -7,6 +7,8 @@ import os
 import re
 import dateparser
 from collections import Counter
+from web.web_intent_router import needs_web_search
+from web.web_query import handle_web_query
 
 # =========================
 # FILE PATHS
@@ -836,12 +838,434 @@ def resume_deferred_goal():
 
     return "🟢 No deferred goals to resume."
 
+# =========================
+# PERSONALITY EVOLUTION ENGINE
+# =========================
+
+def emotional_stability_index(month=None, year=None):
+    df = load_logs()
+    if df.empty:
+        return "No log data available."
+
+    # Ensure datetime column exists
+    if "timestamp" not in df.columns:
+        if "date" in df.columns:
+            df["timestamp"] = pd.to_datetime(df["date"])
+        else:
+            return "Log format error: No timestamp column found."
+
+    df["polarity"] = df["text"].apply(lambda x: TextBlob(x).sentiment.polarity)
+
+    if month and year:
+        df = df[
+            (df["timestamp"].dt.month == month) &
+            (df["timestamp"].dt.year == year)
+        ]
+
+    if df.empty:
+        return "No logs for that period."
+
+    variance = df["polarity"].var()
+
+    if variance is None:
+        return "Not enough data."
+
+    if variance < 0.02:
+        level = "Highly Stable"
+    elif variance < 0.08:
+        level = "Moderately Stable"
+    else:
+        level = "Emotionally Volatile"
+
+    return f"Emotional Stability: {level} (Variance: {round(variance,3)})"
+
+def growth_direction_analysis():
+    df = load_logs()
+    if df.empty:
+        return "No log data available."
+
+    if "timestamp" not in df.columns:
+        if "date" in df.columns:
+            df["timestamp"] = pd.to_datetime(df["date"])
+        else:
+            return "Log format error: No timestamp column found."
+
+    df["polarity"] = df["text"].apply(lambda x: TextBlob(x).sentiment.polarity)
+    df = df.sort_values("timestamp")
+
+    midpoint = len(df) // 2
+    if midpoint == 0:
+        return "Not enough data."
+
+    first_half = df.iloc[:midpoint]["polarity"].mean()
+    second_half = df.iloc[midpoint:]["polarity"].mean()
+
+    if second_half > first_half + 0.05:
+        return "📈 Emotional trajectory improving over time."
+    elif second_half < first_half - 0.05:
+        return "📉 Emotional trajectory declining recently."
+    else:
+        return "➖ Emotional trajectory relatively stable."
+
+def identity_shift_analysis():
+    df = load_logs()
+    if df.empty:
+        return "No log data available."
+
+    if "timestamp" not in df.columns:
+        if "date" in df.columns:
+            df["timestamp"] = pd.to_datetime(df["date"])
+        else:
+            return "Log format error: No timestamp column found."
+
+    df = df.sort_values("timestamp")
+
+    midpoint = len(df) // 2
+    if midpoint == 0:
+        return "Not enough data."
+
+    early_logs = " ".join(df.iloc[:midpoint]["text"]).lower()
+    recent_logs = " ".join(df.iloc[midpoint:]["text"]).lower()
+
+    early_positive = early_logs.count("hope") + early_logs.count("excited")
+    recent_discipline = (
+        recent_logs.count("discipline") +
+        recent_logs.count("training") +
+        recent_logs.count("control")
+    )
+
+    if recent_discipline > early_positive:
+        return "Identity shift detected: Moving toward structured discipline."
+    else:
+        return "No major identity shift detected."
+
+def transformation_summary():
+    stability = emotional_stability_index()
+    growth = growth_direction_analysis()
+    identity = identity_shift_analysis()
+
+    return (
+        "Long-Term Transformation Analysis:\n"
+        f"- {stability}\n"
+        f"- {growth}\n"
+        f"- {identity}"
+    )
+
+# =========================
+# COGNITIVE DISTORTION DETECTOR
+# =========================
+
+def detect_cognitive_distortions():
+    df = load_logs()
+    if df.empty:
+        return "No logs available."
+
+    distortions = {
+        "all_or_nothing": ["always", "never", "completely", "totally"],
+        "catastrophizing": ["ruined", "disaster", "unbearable", "worst"],
+        "mind_reading": ["they think", "they must think", "everyone thinks"],
+        "self_blame": ["my fault", "i ruined", "i messed up", "foolish"]
+    }
+
+    detected = []
+
+    for text in df["text"]:
+        t = text.lower()
+        for label, keywords in distortions.items():
+            if any(word in t for word in keywords):
+                detected.append(label)
+
+    if not detected:
+        return "No strong cognitive distortions detected."
+
+    summary = Counter(detected)
+    return "Cognitive Patterns Detected:\n" + "\n".join(
+        f"- {k.replace('_',' ').title()} ({v} times)"
+        for k, v in summary.items()
+    )
+
+# =========================
+# OVERTHINKING LOOP ANALYSIS
+# =========================
+
+def detect_mental_loops():
+    df = load_logs()
+    if df.empty:
+        return "No logs available."
+
+    df["polarity"] = df["text"].apply(lambda x: TextBlob(x).sentiment.polarity)
+    negative_days = df[df["polarity"] < -0.2]
+
+    if len(negative_days) >= 3:
+        return "⚠️ Repeated negative emotional cycle detected."
+    elif len(negative_days) == 2:
+        return "Mild emotional repetition pattern detected."
+    else:
+        return "No strong emotional loops detected."
+
+# =========================
+# THOUGHT REFRAMING SYSTEM
+# =========================
+
+def reframe_thought():
+    distortions = detect_cognitive_distortions()
+
+    if "Catastrophizing" in distortions:
+        return (
+            "Reframe:\n"
+            "Ask yourself — Is this truly permanent, or temporary?\n"
+            "What is one small controllable action right now?"
+        )
+
+    if "All Or Nothing" in distortions:
+        return (
+            "Reframe:\n"
+            "Progress is not binary.\n"
+            "What is one small improvement instead of perfection?"
+        )
+
+    if "Self Blame" in distortions:
+        return (
+            "Reframe:\n"
+            "Mistakes are data, not identity.\n"
+            "What did this situation teach you?"
+        )
+
+    return "No strong distortions to reframe right now."
+
+# =========================
+# IDENTITY ANCHOR ANALYSIS
+# =========================
+
+def identity_anchor_map():
+    df = load_logs()
+    if df.empty:
+        return "No logs available."
+
+    themes = {
+        "resilience": ["recovery", "trying", "stay strong", "comeback", "rebuild"],
+        "faith": ["bible", "pray", "god", "proverbs", "faith"],
+        "family": ["brother", "parents", "family", "home"],
+        "discipline": ["training", "practice", "team", "study", "exams"],
+        "isolation": ["alone", "boring", "no friends", "not talking"]
+    }
+
+    detected = []
+
+    for text in df["text"]:
+        t = text.lower()
+        for label, words in themes.items():
+            if any(word in t for word in words):
+                detected.append(label)
+
+    if not detected:
+        return "No strong identity anchors detected."
+
+    summary = Counter(detected)
+
+    return "Identity Anchors:\n" + "\n".join(
+        f"- {k.title()} ({v} references)"
+        for k, v in summary.items()
+    )
+
+# =========================
+# EMOTIONAL DEPENDENCY ANALYSIS
+# =========================
+
+def emotional_dependency_check():
+    df = load_logs()
+    if df.empty:
+        return "No logs available."
+
+    dependency_terms = ["football", "injury", "friend", "team"]
+
+    dependency_count = 0
+    total_entries = len(df)
+
+    for text in df["text"]:
+        if any(term in text.lower() for term in dependency_terms):
+            dependency_count += 1
+
+    if total_entries == 0:
+        return "No data."
+
+    ratio = dependency_count / total_entries
+
+    if ratio > 0.4:
+        return "⚠️ Strong emotional dependency detected on a single life domain."
+    elif ratio > 0.2:
+        return "Moderate emotional dependency pattern detected."
+    else:
+        return "No strong emotional dependency pattern."
+
+# =========================
+# SELF CONCEPT STABILITY INDEX
+# =========================
+
+def self_concept_stability():
+    df = load_logs()
+    if df.empty:
+        return "No logs available."
+
+    df["polarity"] = df["text"].apply(lambda x: TextBlob(x).sentiment.polarity)
+
+    volatility = df["polarity"].std()
+
+    if volatility > 0.6:
+        return "⚠️ High emotional volatility — identity instability risk."
+    elif volatility > 0.3:
+        return "Moderate emotional variability."
+    else:
+        return "Stable emotional identity pattern."
+
+# =========================
+# LIFE CHAPTER DETECTION
+# =========================
+
+def detect_life_chapters():
+    df = load_logs()
+    if df.empty:
+        return "No logs available."
+
+    df = df.sort_values("timestamp")
+    df["polarity"] = df["text"].apply(lambda x: TextBlob(x).sentiment.polarity)
+
+    chapters = []
+    current_chapter = []
+    threshold = 0.4
+
+    for i in range(1, len(df)):
+        shift = abs(df.iloc[i]["polarity"] - df.iloc[i-1]["polarity"])
+        current_chapter.append(df.iloc[i-1]["text"])
+
+        if shift > threshold:
+            chapters.append(current_chapter)
+            current_chapter = []
+
+    if current_chapter:
+        chapters.append(current_chapter)
+
+    return f"Detected {len(chapters)} emotional life chapters."
+
+# =========================
+# PERSONAL MYTH EXTRACTION
+# =========================
+
+def personal_myth():
+    df = load_logs()
+    if df.empty:
+        return "No logs available."
+
+    text_blob = " ".join(df["text"].tolist()).lower()
+
+    myth_elements = []
+
+    if "injury" in text_blob:
+        myth_elements.append("The Wounded Warrior")
+
+    if "recovery" in text_blob or "comeback" in text_blob:
+        myth_elements.append("The Rebuilder")
+
+    if "faith" in text_blob or "bible" in text_blob:
+        myth_elements.append("The Faith-Driven Seeker")
+
+    if "team" in text_blob:
+        myth_elements.append("The Leader in Formation")
+
+    if not myth_elements:
+        return "No dominant myth detected."
+
+    return "Your evolving personal myth:\n- " + "\n- ".join(myth_elements)
+
+# =========================
+# COGNITIVE PATTERN ANALYSIS
+# =========================
+
+def cognitive_pattern_analysis():
+    df = load_logs()
+    if df.empty:
+        return "No logs available."
+
+    patterns = {
+        "catastrophizing": ["always", "never", "ruined", "unbearable"],
+        "self-blame": ["my fault", "foolish", "regret"],
+        "growth mindset": ["learning", "improving", "trying"],
+    }
+
+    detected = Counter()
+
+    for text in df["text"]:
+        t = text.lower()
+        for label, words in patterns.items():
+            if any(w in t for w in words):
+                detected[label] += 1
+
+    if not detected:
+        return "No strong cognitive distortions detected."
+
+    return "Cognitive tendencies:\n" + "\n".join(
+        f"- {k}: {v} instances"
+        for k, v in detected.items()
+    )
+
+# =========================
+# THINKING EVOLUTION TRACKER
+# =========================
+
+def thinking_evolution():
+    df = load_logs()
+    if df.empty:
+        return "No logs available."
+
+    df = df.sort_values("timestamp")
+    df["polarity"] = df["text"].apply(lambda x: TextBlob(x).sentiment.polarity)
+
+    first_half = df.iloc[:len(df)//2]["polarity"].mean()
+    second_half = df.iloc[len(df)//2:]["polarity"].mean()
+
+    if second_half > first_half:
+        return "Your thinking pattern shows overall positive evolution."
+    else:
+        return "Your cognitive tone has become more heavy over time."
+
+# =========================
+# FULL SELF SYSTEM REPORT
+# =========================
+
+def full_self_system_report():
+    report = []
+
+    report.append(identity_anchor_map())
+    report.append(emotional_dependency_check())
+    report.append(self_concept_stability())
+    report.append(cognitive_pattern_analysis())
+    report.append(thinking_evolution())
+
+    return "\n\n---\n\n".join(report)
+
+# =========================
+# AUTONOMOUS LIFE STATUS
+# =========================
+
+def life_system_status():
+    risk = emotional_risk_monitor()
+    stability = self_concept_stability()
+
+    if "High" in risk:
+        return "System under psychological strain."
+
+    if "Stable" in stability:
+        return "System operating in stable adaptive mode."
+
+    return "System adapting."
+
 
 # =========================
 # COMMAND ROUTER (SINGLE SOURCE OF TRUTH)
 # =========================
 def handle_command(command, speak_out=True):
     text = command.lower()
+    print("Web detection result:", needs_web_search(text))
 
     if text.startswith("remember that"):
         response = remember_fact(command.replace("remember that", "").strip())
@@ -957,7 +1381,59 @@ def handle_command(command, speak_out=True):
             f"{i}. {g['goal']} ({g['state']})"
             for i, g in goals.items()
         )
-        
+
+    elif "emotional stability" in text:
+        response = emotional_stability_index()
+
+    elif "how have i changed" in text:
+        response = transformation_summary()
+
+    elif "growth analysis" in text:
+        response = growth_direction_analysis()
+
+    elif "identity shift" in text:
+        response = identity_shift_analysis()
+
+    elif "cognitive patterns" in text:
+        response = detect_cognitive_distortions()
+
+    elif "am i overthinking" in text:
+        response = detect_mental_loops()
+
+    elif "reframe my thoughts" in text:
+        response = reframe_thought()
+
+    elif "who am i becoming" in text:
+        response = identity_anchor_map()
+
+    elif "am i emotionally dependent" in text:
+        response = emotional_dependency_check()
+
+    elif "how stable am i" in text:
+        response = self_concept_stability()
+
+    elif "what chapter am i in" in text:
+        response = detect_life_chapters()
+
+    elif "what is my story" in text:
+        response = personal_myth()
+
+    elif "how do i think" in text:
+        response = cognitive_pattern_analysis()
+
+    elif "have i evolved" in text:
+        response = thinking_evolution()
+
+    elif "analyze my entire system" in text:
+        response = full_self_system_report()
+
+    elif "what is my life status" in text:
+        response = life_system_status()
+
+    elif needs_web_search(text):
+        response = handle_web_query(command)
+        print("🌐 SELAH (Web):", response)
+    
     else:
         response = "I am still learning."
 
@@ -965,3 +1441,14 @@ def handle_command(command, speak_out=True):
         speak(response)
     print("🤖 SELAH:", response)
     return response
+
+if __name__ == "__main__":
+    print("🧠 SELAH Online. Type 'exit' to quit.\n")
+
+    while True:
+        user_input = input("You: ")
+
+        if user_input.lower() == "exit":
+            break
+
+        handle_command(user_input)
