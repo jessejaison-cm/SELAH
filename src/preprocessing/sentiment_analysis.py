@@ -71,3 +71,5 @@ if __name__ == "__main__":
     # Generate graph
     generate_mood_trend_graph(df)
     generate_sentiment_distribution(df)
+
+    
