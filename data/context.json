@@ -13,7 +13,9 @@
             "timestamp": "2026-02-10T20:17:02.684510"
         }
     ],
-    "triggers": [],
+    "triggers": [
+        "Fatigue / overload"
+    ],
     "warnings": [
         {
             "warnings": [
@@ -46,5 +48,47 @@
     "last_mood_query": {
         "year": 2026,
         "month": 2
-    }
+    },
+    "chat_history": [
+        {
+            "user": "What is the squad lineup for Croatia Vs Belgium",
+            "response": "The Croatian team have had a great start to this WC and are on top of Group F - but now they are facing Belgium So is Modric or De Bruyne ... Zlatko Dalic. Rudi Garcia. Romelu Lukaku. Luka Modric. Croatia vs Belgium on Tue, Jun 2, 2026, 16:00 UTC. Check live results, H2H, match stats, lineups, player ratings, insights, team forms, shotmap, and highlights.\n\nSources:\n- Croatia vs Belgium - live score, predicted lineups and H2H: https://www.fotmob.com/matches/belgium-vs-croatia/2szqg2",
+            "timestamp": "2026-06-02T21:41:53.000000"
+        },
+        {
+            "user": "can u give me the players name onl",
+            "response": "[SYS_ALERT] User query detected. Processing natural language request for data extraction.\n[METRIC_SCAN] Previous context analysis initiated.\n[DECRYPTION_SUCCESS] User seeks specific player names from the Croatia vs Belgium match.\n\nBased on previous interaction, the players mentioned in relation to the Croatia vs Belgium fixture are:\n\n*   Luka Modric (Croatia)\n*   Kevin De Bruyne (Belgium)\n*   Romelu Lukaku (Belgium)\n\n[DATA_OUTPUT_COMPLETE] Player name compilation finalized.",
+            "timestamp": "2026-06-02T21:44:33.973597"
+        },
+        {
+            "user": "Can u give me the 11 players name for bith the team starting lineup",
+            "response": "[SYS_ALERT] User query detected. Processing specific data request for football squad composition.\n[METRIC_SCAN] Previous context analysis initiated. User seeks comprehensive starting lineup data for both Croatia and Belgium.\n[DECRYPTION_SUCCESS] The request for the full 11 starting players for each team is noted.\n\n[DATA_RETRIEVAL_STATUS] Accessing real-time match data for Croatia vs Belgium, scheduled for Tue, Jun 2, 2026, 16:00 UTC.\n[DATA_LIMITATION_WARNING] Current telemetry indicates that definitive, officially confirmed starting lineups are typically released closer to the match commencement time. As the match date is in the future, precise 11-player lineups for both Croatia and Belgium are not yet finalized or publicly available for retrieval from current data streams.\n\n[ANALYSIS_SUMMARY] While key players like Luka Modric (Croatia), Kevin De Bruyne (Belgium), and Romelu Lukaku (Belgium) have been identified, the complete starting XI for each team for the specified future fixture cannot be provided with absolute certainty at this current temporal vector. Predicted lineups are subject to change by team management (Zlatko Dalic for Croatia, Rudi Garcia for Belgium).\n\n[DATA_RECOMMENDATION] To obtain the most accurate and finalized starting elevens for both Croatia and Belgium, I advise querying closer to the match date, specifically on Tue, Jun 2, 2026, approximately 60-90 minutes prior to the 16:00 UTC kickoff.",
+            "timestamp": "2026-06-02T21:46:28.869324"
+        },
+        {
+            "user": "Strating lineup for belgium vs croatia ",
+            "response": "[SYS_ALERT] User query detected. Processing natural language request for football squad data.\n[METRIC_SCAN] Previous interaction history analyzed. User is consistently requesting starting lineup information for the Belgium vs. Croatia fixture.\n[DECRYPTION_SUCCESS] User seeks the starting eleven for both Belgium and Croatia.\n\n[DATA_RETRIEVAL_STATUS] Accessing current data streams for the specified match: Belgium vs. Croatia, scheduled for Tue, Jun 2, 2026, 16:00 UTC.\n[DATA_LIMITATION_WARNING] Current telemetry confirms that the match remains in a future temporal vector. Official, finalized starting lineups are not yet released by team management. Player selections by Rudi Garcia (Belgium) and Zlatko Dalic (Croatia) are fluid until closer to the match commencement.\n\n[ANALYSIS_SUMMARY] As previously communicated, the precise 11 players for each team's starting lineup for the June 2, 2026 fixture cannot be provided at this time. Telemetry indicates that definitive rosters are typically confirmed approximately 60-90 minutes prior to kickoff. While key players such as Kevin De Bruyne, Romelu Lukaku, and Luka Modric are anticipated to be significant components, their starting status and the full squad composition are not yet locked.\n\n[DATA_RECOMMENDATION] For the most accurate and validated starting lineups for both Belgium and Croatia, I advise re-querying closer to the actual match date, specifically on Tue, Jun 2, 2026, approximately 14:30 UTC.",
+            "timestamp": "2026-06-02T21:47:47.091691"
+        },
+        {
+            "user": "Croatia Vs Belgium lineup",
+            "response": "Kickoff: Sunday 2:45PM (ET) Expect a brand-new lineup and full rotation with Croatia playing one of the lowest ranked sides in the world. Croatia vs Belgium on Tue, Jun 2, 2026, 16:00 UTC. Check live results, H2H, match stats, lineups, player ratings, insights, team forms, shotmap, ... Croatia - Belgium Line-up \u00b7 6. A. Witsel \u00b7 7. (C) K. De Bruyne \u00b7 11. Y. Carrasco. (72' J. Doku) \u00b7 14. D. Mertens. (47' R. Lukaku) \u00b7 19. L. Dendoncker. (72' Y....\n\nSources:\n- \ud83c\udded\ud83c\uddf7\ud83c\udde7\ud83c\uddea The CroatianSports.com recommended starting XI ...: https://www.facebook.com/CroatianSoccer/posts/-the-croatiansportscom-recommended-starting-xi-vs-belgium-heres-who-we-want-to-s/1666885208770791/\n- Croatia vs Belgium - live score, predicted lineups and H2H ...: https://www.fotmob.com/matches/belgium-vs-croatia/2szqg2\n- Croatia - Belgium Line-up: World Cup Football: https://www.tntsports.co.uk/football/world-cup/2022/live-croatia-belgium_mtc1287422/live-lineup.shtml",
+            "timestamp": "2026-06-02T21:50:21.590536"
+        },
+        {
+            "user": "in a free version of kahoot, if i conduct a quiz how particiapants can participate ",
+            "response": "[SYS_ALERT] Context shift detected. Previous domain: Sports Data Retrieval (Football). Current domain: Educational Technology Interaction (Kahoot! Functionality).\n[METRIC_SCAN] User query analyzed for instructional requirement regarding Kahoot! participant access.\n[DECRYPTION_SUCCESS] User seeks methodology for participant entry into a free Kahoot! quiz.\n\n[DATA_RETRIEVAL_STATUS] Accessing Kahoot! platform operational parameters.\n[PROCESS_EXECUTION_SEQUENCE] To facilitate participant entry into a Kahoot! quiz hosted on a free account, the following protocol is standard:\n\n1.  **Initiate Quiz Host:** The quiz host must launch the Kahoot! game on their device (e.g., computer, tablet). This action will generate a unique Game PIN.\n2.  **Disseminate Game PIN:** The host displays this Game PIN prominently. Participants require this alphanumeric code for access.\n3.  **Participant Access Point:** Participants navigate to `kahoot.it` on their respective devices (e.g., smartphone, computer, tablet).\n4.  **PIN Input:** On the `kahoot.it` interface, participants locate the input field labeled \"Game PIN\" and enter the code provided by the host.\n5.  **Username Allocation:** Following successful PIN validation, participants are prompted to input a username. This identifier will be displayed during gameplay.\n6.  **Lobby Integration:** Upon username submission, participants are integrated into the quiz lobby, awaiting the host's initiation of the game.\n\n[ANALYSIS_SUMMARY] Participation in a free Kahoot! quiz is contingent upon the host generating a unique Game PIN, which participants then input via the `kahoot.it` web portal or the dedicated Kahoot! application. No prior account registration is typically required for participants to join a game.\n\n[DATA_OUTPUT_COMPLETE] Kahoot! participant access protocol provided.",
+            "timestamp": "2026-06-02T21:55:08.122471"
+        },
+        {
+            "user": "Croatia Vs Belgium lineup",
+            "response": "Kickoff: Sunday 2:45PM (ET) Expect a brand-new lineup and full rotation with Croatia playing one of the lowest ranked sides in the world. Croatia vs Belgium on Tue, Jun 2, 2026, 16:00 UTC. Check live results, H2H, match stats, lineups, player ratings, insights, team forms, shotmap, ... Croatia - Belgium Line-up \u00b7 6. A. Witsel \u00b7 7. (C) K. De Bruyne \u00b7 11. Y. Carrasco. (72' J. Doku) \u00b7 14. D. Mertens. (47' R. Lukaku) \u00b7 19. L. Dendoncker. (72' Y....\n\n**Sources:** [\ud83c\udded\ud83c\uddf7\ud83c\udde7\ud83c\uddea The CroatianSports.com recommended starting XI ...](https://www.facebook.com/CroatianSoccer/posts/-the-croatiansportscom-recommended-starting-xi-vs-belgium-heres-who-we-want-to-s/1666885208770791/), [Croatia vs Belgium - live score, predicted lineups and H2H ...](https://www.fotmob.com/matches/belgium-vs-croatia/2szqg2), [Croatia - Belgium Line-up: World Cup Football](https://www.tntsports.co.uk/football/world-cup/2022/live-croatia-belgium_mtc1287422/live-lineup.shtml)",
+            "timestamp": "2026-06-02T21:57:02.977017"
+        },
+        {
+            "user": "What was the score Brazil Vs Egypt ",
+            "response": "Endrick 's goal early in the second half gave Brazil a 2-1 win over Egypt in their final World Cup warm-up match. Two of international soccer's top men's national teams, Brazil and Egypt, will play each other at Huntington Bank Field on June 6 as part of the Road to 26 ... Brazil vs Egypt 2-1 | Ext\u0435nd\u0435d H\u0456ghl\u0456ghts & All G\u043eals 2026 HD 83K views \u00b7 6 hours ago. Brazil vs. Egypt | Full Game Highlights | ESPN FC...\n\n**Sources:** [Brazil 2-1 Egypt (Jun 6, 2026) Final Score](https://www.espn.com/soccer/match/_/gameId/401861998/egypt-brazil), [Brazil vs. Egypt](https://huntingtonbankfield.com/events/brazil-egypt/), [Brazil vs Egypt 2-1 | Ext\u0435nd\u0435d H\u0456ghl\u0456ghts & All G\u043eals 2026 HD](https://www.youtube.com/watch?v=3RV4CDyrqVk)",
+            "timestamp": "2026-06-07T12:51:04.998742"
+        }
+    ]
 }

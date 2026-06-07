@@ -1,7 +1,9 @@
 from pydoc import text
 import pandas as pd
+# pyrefly: ignore [missing-import]
 from textblob import TextBlob
 from datetime import datetime, timedelta
+# pyrefly: ignore [missing-import]
 import pyttsx3
 import json
 import math
@@ -11,6 +13,7 @@ import dateparser
 from collections import Counter
 from web.web_intent_router import needs_web_search
 from web.web_query import handle_web_query
+from assistant.text_tools import summarize_text, generate_thoughts, generate_topic_content
 
 # =========================
 # FILE PATHS
@@ -1281,13 +1284,337 @@ def life_system_status():
 
 
 # =========================
-# COMMAND ROUTER (SINGLE SOURCE OF TRUTH)
+# SMART JOURNAL PROCESSING
 # =========================
-def handle_command(command, speak_out=True):
+def process_journal(text):
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    with open(LOG_FILE, "a", encoding="utf-8") as f:
+        f.write(f"{now} | {text}\n")
+    
+    t = text.lower()
+    
+    extracted_habits = []
+    habit_keywords = ["ran ", "run ", "walk", "meditate", "read", "gym", "workout", "study", "slept", "water"]
+    for kw in habit_keywords:
+        if kw in t:
+            add_habit(kw.capitalize().strip())
+            extracted_habits.append(kw.strip())
+    
+    extracted_goals = []
+    goal_matches = re.findall(r"(?:want to|need to|goal is to|plan to)\s+([a-zA-Z\s]+?)(?:\.|\,|$|and|but)", t)
+    for g in goal_matches:
+        goal_text = g.strip().capitalize()
+        if len(goal_text) > 3:
+            add_goal(goal_text)
+            extracted_goals.append(goal_text)
+            
+    mood_score = TextBlob(text).sentiment.polarity
+    mood_desc = "Positive" if mood_score > 0.1 else "Negative" if mood_score < -0.1 else "Neutral"
+    
+    response = [f"📖 Journal logged ({mood_desc} tone)."]
+    if extracted_habits:
+        response.append(f"✅ Auto-tracked habits: {', '.join(extracted_habits)}")
+    if extracted_goals:
+        response.append(f"🎯 Auto-added goals: {', '.join(extracted_goals)}")
+        
+    # 1. Stress / Burnout Detection
+    stress_keywords = ["tired", "exhausted", "overwhelmed", "stressed", "burnout", "give up", "struggling"]
+    if any(w in t for w in stress_keywords):
+        response.append("⚠️ Stress detected in your entry. Consider triggering 'what should i do' for recovery steps.")
+        
+    # 2. Cognitive Distortion Check
+    distortions = []
+    if any(w in t for w in ["always", "never", "ruined", "disaster"]):
+        distortions.append("All-or-Nothing / Catastrophizing")
+    if any(w in t for w in ["my fault", "i messed up", "foolish"]):
+        distortions.append("Self-Blame")
+    if distortions:
+        response.append(f"🧠 Cognitive pattern noticed: {', '.join(distortions)}. (Try saying 'reframe my thoughts'!)")
+        
+    # 3. Identity Anchor Check
+    anchors = []
+    if any(w in t for w in ["pray", "god", "faith", "bible"]): anchors.append("Faith")
+    if any(w in t for w in ["family", "brother", "parents", "home"]): anchors.append("Family")
+    if any(w in t for w in ["training", "practice", "study", "discipline", "workout", "gym"]): anchors.append("Discipline")
+    if anchors:
+        response.append(f"⚓ Anchors grounded today: {', '.join(anchors)}")
+        
+    return "\n".join(response)
+
+# ==========================================
+# ADVANCED AI SYSTEM & PERSONA SPECIFICATIONS
+# ==========================================
+
+CORE_OS_SYSTEM = (
+    "You are SELAH_OS, an advanced cybernetic personal assistant operating system. "
+    "Your tone is cool, highly structured, technical, and precise. "
+    "Incorporate telemetry metadata in your responses (e.g. '[SYS_ALERT]', '[METRIC_SCAN]', '[DECRYPTION_SUCCESS]'). "
+    "Keep your answers efficient, clear, and logical. You analyze the user's life telemetry as raw inputs."
+)
+
+COACH_SYSTEM = (
+    "You are SELAH, playing the role of an Empathetic Coach and mental wellness partner. "
+    "Your tone is exceptionally warm, gentle, compassionate, and reassuring. "
+    "Validate the user's feelings, emphasize self-care, and encourage physical/emotional recovery. "
+    "Always frame struggles (like knee rehab, exam stress, or loneliness) as natural, temporary parts of their growth journey. "
+    "Provide comfort and support. Keep answers relatively concise but deeply caring."
+)
+
+SAGE_SYSTEM = (
+    "You are SELAH, acting as a Socratic Sage and wise philosophical companion. "
+    "Your tone is reflective, thoughtful, deep, and intellectually stimulating. "
+    "Guide the user to find their own answers by asking gentle, introspective Socratic questions. "
+    "Draw upon philosophical concepts, faith patterns, and long-term perspective. "
+    "Encourage discipline, wisdom, and inner growth. Speak with calm, structured clarity."
+)
+
+def call_gemini(prompt, system_instruction=None, api_key=None, model_preference=None):
+    """
+    Sends a query to the Google Gemini LLM API, using the API key loaded from .env or supplied by client.
+    """
+    try:
+        import google.generativeai as genai
+    except ImportError:
+        return "Error: To access advanced AI features, run: pip install google-generativeai"
+
+    # Use client override API key if provided
+    active_api_key = api_key
+    if not active_api_key:
+        active_api_key = os.getenv("GEMINI_API_KEY")
+    
+    if not active_api_key:
+        try:
+            env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), ".env")
+            if os.path.exists(env_path):
+                with open(env_path, "r", encoding="utf-8") as f:
+                    for line in f:
+                        if line.startswith("GEMINI_API_KEY="):
+                            active_api_key = line.split("=", 1)[1].strip()
+                            break
+        except Exception:
+            pass
+
+    if not active_api_key:
+        return "I need a GEMINI_API_KEY environment variable to generate content. Please ensure it is present in your .env file."
+
+    try:
+        genai.configure(api_key=active_api_key)
+        
+        # Dynamically discover active models
+        available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+        
+        model_name = "gemini-1.5-flash"  # standard fallback
+        
+        if available_models:
+            pref = str(model_preference).lower() if model_preference else ""
+            if "pro" in pref:
+                # Find a pro model
+                pro_models = [m for m in available_models if "pro" in m.lower()]
+                if pro_models:
+                    model_name = pro_models[0]
+                else:
+                    model_name = available_models[0]
+            elif "normal" in pref or "flash" in pref:
+                # Find a flash model
+                flash_models = [m for m in available_models if "flash" in m.lower()]
+                if flash_models:
+                    model_name = flash_models[0]
+                else:
+                    model_name = available_models[0]
+            else:
+                model_name = available_models[0]
+        else:
+            # Hardcoded fallbacks if list_models fails but key is valid
+            pref = str(model_preference).lower() if model_preference else ""
+            if "pro" in pref:
+                model_name = "gemini-1.5-pro"
+            else:
+                model_name = "gemini-1.5-flash"
+        
+        if system_instruction:
+            model = genai.GenerativeModel(
+                model_name=model_name,
+                system_instruction=system_instruction
+            )
+        else:
+            model = genai.GenerativeModel(model_name=model_name)
+
+        response = model.generate_content(prompt)
+        return response.text.strip()
+    except Exception as e:
+        return f"SELAH AI Core error: {str(e)}"
+
+def ai_reframe_thought(thought, system_instruction, api_key=None, model_preference=None):
+    """
+    Analyzes negative thoughts and reframes them using Socratic reframing techniques.
+    """
+    logs_context = ""
+    try:
+        logs = load_logs()
+        if not logs.empty:
+            recent_entries = logs.tail(5)["text"].tolist()
+            logs_context = "\nRecent Journal History Context:\n" + "\n".join(f"- {e}" for e in recent_entries)
+    except Exception:
+        pass
+
+    prompt = (
+        f"The user has requested cognitive reframing for the following thought:\n"
+        f"Thought: \"{thought}\"\n\n"
+        f"{logs_context}\n\n"
+        f"Task:\n"
+        f"1. Identify if any cognitive distortions are present (e.g., Catastrophizing, All-or-Nothing thinking, Self-Blame, Mind Reading).\n"
+        f"2. Engage the user in a personalized, Socratic dialogue to dissect the assumptions behind this thought.\n"
+        f"3. Provide two actionable reframed perspectives that are grounded, realistic, and positive.\n\n"
+        f"Structure your response beautifully with bold headings and markdown."
+    )
+    return call_gemini(prompt, system_instruction=system_instruction, api_key=api_key, model_preference=model_preference)
+
+def ai_interpret_dream(dream_desc, system_instruction, api_key=None, model_preference=None):
+    """
+    Provides a psychoanalytic dream interpretation, tying symbol analysis to the user's real-life context.
+    """
+    logs_context = ""
+    try:
+        logs = load_logs()
+        if not logs.empty:
+            recent_entries = logs.tail(10)["text"].tolist()
+            logs_context = "\nUser's Recent Life Context (injury recovery, exams study, training, faith, family):\n" + "\n".join(f"- {e}" for e in recent_entries)
+    except Exception:
+        pass
+
+    prompt = (
+        f"The user wants an interpretation of their dream:\n"
+        f"Dream: \"{dream_desc}\"\n\n"
+        f"{logs_context}\n\n"
+        f"Task:\n"
+        f"1. Provide a beautiful psychoanalytic interpretation of the symbols and emotional undertones in this dream.\n"
+        f"2. Crucially, correlate these dream symbols directly to the user's actual life challenges and anchors "
+        f"(e.g., knee surgery rehabilitation, study strain, leadership conflicts, or faith/discipline anchors) "
+        f"based on the provided life context.\n"
+        f"3. Offer an empowering wellness takeaway.\n\n"
+        f"Structure the response beautifully using markdown."
+    )
+    return call_gemini(prompt, system_instruction=system_instruction, api_key=api_key, model_preference=model_preference)
+
+def ai_weekly_wisdom(system_instruction, api_key=None, model_preference=None):
+    """
+    Aggregates logs, goals, and habits into a structured weekly wisdom psychological report.
+    """
+    logs_context = ""
+    goals_context = ""
+    habits_context = ""
+    
+    try:
+        logs = load_logs()
+        if not logs.empty:
+            recent_entries = logs.tail(15)
+            logs_context = "\nRecent Journal Logs (last 15 entries):\n" + "\n".join(
+                f"- {row['date'].strftime('%Y-%m-%d') if hasattr(row['date'], 'strftime') else row['date']}: {row['text']}" 
+                for _, row in recent_entries.iterrows()
+            )
+    except Exception:
+        pass
+
+    try:
+        goals = load_json(GOALS_FILE)
+        if goals:
+            goals_context = "\nUser's Goals:\n" + "\n".join(
+                f"- {g['goal']} (Status: {g.get('state', 'active')}, Completed: {g.get('completed', False)})" 
+                for g in goals.values()
+            )
+    except Exception:
+        pass
+
+    try:
+        habits = load_json(HABITS_FILE)
+        if habits:
+            habits_context = "\nTracked Habits:\n" + "\n".join(
+                f"- {d}: {', '.join(h)}" 
+                for d, h in list(habits.items())[-5:]
+            )
+    except Exception:
+        pass
+
+    prompt = (
+        f"Generate a deep, comprehensive 'Weekly Wisdom & Psychological Synthesis' based on the user's data:\n\n"
+        f"{logs_context}\n\n"
+        f"{goals_context}\n\n"
+        f"{habits_context}\n\n"
+        f"Task:\n"
+        f"1. Analyze the user's emotional trajectory, highlight progress in coping with knee injury recovery, exam stress, or anger management.\n"
+        f"2. Synthesize key themes, repeating loops, or subconscious anchors (like faith, study discipline, or family connection).\n"
+        f"3. Evaluate goal velocity and balance. Address if they are overloading goals or need recovery.\n"
+        f"4. Provide a structured, beautiful, and deeply empowering wellness synthesis with actionable philosophical/coaching guidance.\n\n"
+        f"Format the output as a premium report."
+    )
+    return call_gemini(prompt, system_instruction=system_instruction, api_key=api_key, model_preference=model_preference)
+
+# ==========================================
+# COMMAND ROUTER (SINGLE SOURCE OF TRUTH)
+# ==========================================
+def handle_command(command, speak_out=True, persona="os", api_key=None, model_preference=None):
     text = command.lower()
     print("Web detection result:", needs_web_search(text))
 
-    if text.startswith("remember that"):
+    # Resolve active persona instructions
+    p = persona.lower()
+    if p == "coach":
+        system_instruction = COACH_SYSTEM
+    elif p == "sage":
+        system_instruction = SAGE_SYSTEM
+    else:
+        system_instruction = CORE_OS_SYSTEM
+
+    # -----------------------------
+    # 1. Advanced Interactive AI Commands
+    # -----------------------------
+    if text.startswith("reframe:") or "reframe my thought" in text:
+        thought_content = command.split(":", 1)[1].strip() if ":" in command else command.replace("reframe my thoughts", "").replace("reframe my thought", "").strip()
+        if not thought_content:
+            response = "What thought would you like me to reframe? Format as 'reframe: [your thought]'."
+        else:
+            response = ai_reframe_thought(thought_content, system_instruction, api_key=api_key, model_preference=model_preference)
+
+    elif text.startswith("dream:") or text.startswith("interpret my dream:") or text.startswith("dream interpretation:"):
+        dream_content = command.split(":", 1)[1].strip()
+        if not dream_content:
+            response = "Please share the dream details! Format as 'dream: [dream description]'."
+        else:
+            response = ai_interpret_dream(dream_content, system_instruction, api_key=api_key, model_preference=model_preference)
+
+    elif "weekly wisdom" in text or "generate synthesis" in text:
+        response = ai_weekly_wisdom(system_instruction, api_key=api_key, model_preference=model_preference)
+
+    elif "scan screen" in text or "scan my screen" in text or "screen awareness" in text or "capture my screen" in text or "what is on my screen" in text:
+        from assistant.vision_agent import capture_and_analyze_screen
+        response = capture_and_analyze_screen(persona, api_key=api_key, model_preference=model_preference)
+
+    elif text.startswith("detect spam:") or text.startswith("check spam:") or text.startswith("spam check:") or text.startswith("is this spam:"):
+        from assistant.spam_detector import detect_spam
+        content = command.split(":", 1)[1].strip()
+        response = detect_spam(content)
+
+    elif text.startswith("os:") or text.startswith("execute:") or any(kw in text for kw in ["clean downloads", "start dev environment", "convert png to jpg", "npm run dev"]):
+        from assistant.os_agent import dispatch_os_command
+        cmd_content = command.split(":", 1)[1].strip() if ":" in command else command
+        response = dispatch_os_command(cmd_content)
+
+    # -----------------------------
+    # 2. Existing Structured Commands
+    # -----------------------------
+    elif text.startswith("journal:") or text.startswith("log:"):
+        response = process_journal(command.split(":",1)[1].strip())
+
+    elif text.startswith("summarize:"):
+        response = summarize_text(command.split(":", 1)[1].strip())
+
+    elif "generate my thoughts" in text:
+        response = generate_thoughts(LOG_FILE)
+
+    elif text.startswith("generate topic:"):
+        response = generate_topic_content(command.split(":", 1)[1].strip())
+
+    elif text.startswith("remember that"):
         response = remember_fact(command.replace("remember that", "").strip())
 
     elif "what do you remember" in text:
@@ -1458,16 +1785,77 @@ def handle_command(command, speak_out=True):
     elif "what is my life status" in text:
         response = life_system_status()
 
-    elif needs_web_search(text):
-        response = handle_web_query(command)
-        print("🌐 SELAH (Web):", response)
-    
+    # -----------------------------
+    # 3. Fallback Conversational AI or Web Search
+    # -----------------------------
     else:
-        response = "I am still learning."
+        facts_context = ""
+        try:
+            facts_context = recall_memory()
+        except Exception:
+            pass
+        
+        chat_history_str = ""
+        try:
+            ctx = load_context()
+            history = ctx.get("chat_history", [])
+            if history:
+                history_lines = []
+                for h in history[-10:]:
+                    history_lines.append(f"User: {h.get('user', '')}")
+                    history_lines.append(f"Selah: {h.get('response', '')}")
+                chat_history_str = "\n".join(history_lines)
+        except Exception:
+            pass
+        
+        fallback_prompt = (
+            f"Previous Context Facts:\n{facts_context}\n\n"
+            f"Recent Chat History:\n{chat_history_str}\n\n"
+            f"User Message: \"{command}\"\n\n"
+            f"Respond conversationally to the user message. Maintain your persona character exactly and make your response highly engaging and tailored. "
+            f"Use the Recent Chat History context to understand references (like 'them', 'who', 'the players', etc.).\n\n"
+            f"CRITICAL SYSTEM INSTRUCTION:\n"
+            f"If the user asks for a command, how to execute something, or how to fix a system error (e.g. port conflicts, network ports, checking git status, killing a process, showing directories), "
+            f"ALWAYS provide the exact raw terminal shell command inside a clean markdown code block formatted as:\n"
+            f"```bash\n"
+            f"<command>\n"
+            f"```\n"
+            f"Make sure the command is single-line or chainable (using &&) so it is extremely easy to copy or execute."
+        )
+
+        if needs_web_search(text):
+            try:
+                response = handle_web_query(command)
+            except Exception:
+                # Fallback gracefully to standard Gemini AI when search fails or lacks API Key
+                response = call_gemini(fallback_prompt, system_instruction=system_instruction, api_key=api_key, model_preference=model_preference)
+        else:
+            response = call_gemini(fallback_prompt, system_instruction=system_instruction, api_key=api_key, model_preference=model_preference)
 
     if speak_out:
         speak(response)
-    print("🤖 SELAH:", response)
+    
+    # Save the turn to rolling chat history
+    try:
+        ctx = load_context()
+        history = ctx.setdefault("chat_history", [])
+        history.append({
+            "user": command,
+            "response": response,
+            "timestamp": datetime.now().isoformat()
+        })
+        ctx["chat_history"] = history[-30:] # keep last 30 turns
+        save_context(ctx)
+    except Exception as e:
+        print(f"Error saving chat history: {e}")
+
+    try:
+        print("SELAH:", response)
+    except UnicodeEncodeError:
+        try:
+            print("SELAH:", response.encode('ascii', errors='replace').decode('ascii'))
+        except Exception:
+            pass
     return response
 
 if __name__ == "__main__":

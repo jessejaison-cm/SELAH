@@ -7,7 +7,14 @@ def needs_web_search(user_text):
         "price",
         "define",
         "current",
-        "today"
+        "today",
+        "lineup",
+        "squad",
+        "vs",
+        "match",
+        "score",
+        "game",
+        "play"
     ]
 
     user_text = user_text.lower()

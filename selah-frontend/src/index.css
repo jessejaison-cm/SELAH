@@ -1,13 +1,1885 @@
-body {
+/* ==========================================================================
+   SELAH_OS HUD CSS DESIGN SYSTEM
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Orbitron:wght@400;700;900&family=Outfit:wght@300;400;600;800&family=Space+Grotesk:wght@400;500;700&display=swap');
+
+/* Color & Styling Tokens */
+:root {
+  --color-bg-deep: #05070f;
+  --color-panel-glass: rgba(8, 12, 28, 0.75);
+  --color-sidebar-glass: rgba(5, 7, 16, 0.95);
+  --color-primary: #00f0ff;
+  --color-primary-glow: rgba(0, 240, 255, 0.35);
+  --color-primary-dim: rgba(0, 240, 255, 0.15);
+  --color-secondary: #9d4edd;
+  --color-secondary-glow: rgba(157, 78, 221, 0.35);
+  --color-secondary-dim: rgba(157, 78, 221, 0.15);
+  --color-danger: #ff2a6d;
+  --color-danger-glow: rgba(255, 42, 109, 0.4);
+  --color-success: #05ff9b;
+  --color-success-glow: rgba(5, 255, 155, 0.4);
+  --color-text-bright: #f1f5f9;
+  --color-text-muted: #64748b;
+  --color-border: rgba(0, 240, 255, 0.15);
+  --font-title: 'Orbitron', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-terminal: 'Outfit', sans-serif;
+  --font-tech: 'Space Grotesk', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  width: 100%;
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  padding: 0;
+  overflow: hidden;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--color-bg-deep);
+  color: var(--color-text-bright);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+/* Futuristic Webkit Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 240, 255, 0.02);
+  border-left: 1px solid rgba(0, 240, 255, 0.05);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-primary-dim);
+  border-radius: 3px;
+  border: 1px solid rgba(0, 240, 255, 0.1);
+  transition: background 0.3s;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-primary-glow);
+  box-shadow: 0 0 8px var(--color-primary);
+}
+
+/* Main HUD App Container */
+.app-container {
+  height: 100%;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 50%, #0d122b 0%, var(--color-bg-deep) 100%);
+}
+
+/* Cyberpunk Digital Grid Backdrop */
+.app-container::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    linear-gradient(rgba(0, 240, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 240, 255, 0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+  background-position: center center;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Cyberpunk CRT Scanline overlay */
+.app-container::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    rgba(18, 16, 16, 0) 50%, 
+    rgba(0, 0, 0, 0.12) 50%
+  ), linear-gradient(
+    90deg,
+    rgba(255, 0, 0, 0.03),
+    rgba(0, 255, 0, 0.01),
+    rgba(0, 0, 255, 0.03)
+  );
+  background-size: 100% 4px, 3px 100%;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+/* Background Ambient Glows */
+.bg-glow {
+  position: absolute;
+  width: 50vw;
+  height: 50vw;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 1;
+  filter: blur(140px);
+  opacity: 0.7;
+}
+
+.bg-glow.top-left {
+  top: -15%;
+  left: -15%;
+  background: radial-gradient(circle, rgba(0, 240, 255, 0.12) 0%, transparent 70%);
+}
+
+.bg-glow.bottom-right {
+  bottom: -15%;
+  right: -15%;
+  background: radial-gradient(circle, rgba(157, 78, 221, 0.12) 0%, transparent 70%);
+}
+
+/* HUD Main Layout */
+.hud-glass {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+  background: var(--color-panel-glass);
+  backdrop-filter: blur(20px) saturate(140%);
+  display: flex;
+  flex-direction: row;
+  overflow: hidden;
+  border: none;
+  box-shadow: inset 0 0 60px rgba(0, 240, 255, 0.02);
+}
+
+/* Sidebar Styling */
+.sidebar {
+  width: 320px;
+  height: 100%;
+  border-right: 1px solid var(--color-border);
+  background: var(--color-sidebar-glass);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  z-index: 110;
+  transition: all 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
+  overflow: hidden;
+  box-shadow: 10px 0 30px rgba(0, 0, 0, 0.6);
+  position: relative;
+}
+
+/* Sidebar Brand Panel */
+.sidebar-brand {
+  padding: 24px;
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(0, 240, 255, 0.02);
+  position: relative;
+}
+
+.sidebar-brand::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 60px;
+  height: 2px;
+  background-color: var(--color-primary);
+  box-shadow: 0 0 10px var(--color-primary);
+}
+
+.sidebar-brand h2 {
+  margin: 0;
+  font-family: var(--font-title);
+  font-size: 1.15rem;
+  letter-spacing: 2px;
+  color: var(--color-text-bright);
+  font-weight: 700;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+}
+
+.sidebar-brand .accent {
+  color: var(--color-primary);
+  text-shadow: 0 0 10px var(--color-primary-glow);
+}
+
+/* Glowing Telemetry Status Dot */
+.status-dot {
+  width: 8px;
+  height: 8px;
+  background-color: var(--color-success);
+  border-radius: 50%;
+  box-shadow: 0 0 10px var(--color-success);
+  animation: pulse-glow 2s infinite ease-in-out;
+}
+
+.close-btn {
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: 1.6rem;
+  cursor: pointer;
+  margin-left: auto;
+  padding: 0 5px;
+  display: none; /* Only visible on mobile drawer */
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.close-btn:hover {
+  color: var(--color-danger);
+  text-shadow: 0 0 10px var(--color-danger);
+}
+
+/* Sidebar Actions Box */
+.sidebar-actions {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-bottom: 1px solid rgba(0, 240, 255, 0.08);
+}
+
+/* HUD Buttons System */
+.hud-button {
+  background: rgba(0, 240, 255, 0.05);
+  color: var(--color-primary);
+  border: 1px solid rgba(0, 240, 255, 0.25);
+  padding: 12px 20px;
+  border-radius: 4px;
+  font-family: var(--font-tech);
+  font-weight: 600;
+  font-size: 0.85rem;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  position: relative;
+  overflow: hidden;
+}
+
+.hud-button::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(0, 240, 255, 0.15),
+    transparent
+  );
+  transition: 0.5s;
+}
+
+.hud-button:hover::before {
+  left: 100%;
+}
+
+.hud-button:hover {
+  background: rgba(0, 240, 255, 0.12);
+  border-color: var(--color-primary);
+  color: #fff;
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+.hud-button:active {
+  transform: translateY(1px);
+}
+
+.hud-button.full-width {
+  width: 100%;
+}
+
+.hud-button.temp-btn {
+  background: rgba(255, 42, 109, 0.04);
+  color: var(--color-danger);
+  border-color: rgba(255, 42, 109, 0.2);
+}
+
+.hud-button.temp-btn:hover,
+.hud-button.temp-btn.active {
+  background: rgba(255, 42, 109, 0.12);
+  border-color: var(--color-danger);
+  color: #fff;
+  box-shadow: 0 0 15px rgba(255, 42, 109, 0.3);
+}
+
+/* History List Panel */
+.history-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.history-title {
+  font-family: var(--font-title);
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+  letter-spacing: 2px;
+  margin-bottom: 12px;
+  padding-left: 6px;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.history-item {
+  padding: 12px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: var(--font-tech);
+  font-size: 0.88rem;
+  color: rgba(255, 255, 255, 0.75);
+  background: rgba(255, 255, 255, 0.01);
+  border: 1px solid transparent;
+  transition: all 0.2s;
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  overflow: hidden;
+}
+
+.history-item-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
+}
+
+.history-item:hover {
+  background: rgba(0, 240, 255, 0.03);
+  border-color: rgba(0, 240, 255, 0.1);
+  color: var(--color-primary);
+  padding-left: 20px;
+}
+
+.history-item.active {
+  background: rgba(0, 240, 255, 0.06);
+  color: var(--color-primary);
+  border-color: rgba(0, 240, 255, 0.25);
+  border-left: 3px solid var(--color-primary);
+  font-weight: 500;
+  box-shadow: inset 5px 0 15px rgba(0, 240, 255, 0.05);
+  padding-left: 20px;
+}
+
+.delete-chat-btn {
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: 1.15rem;
+  font-weight: bold;
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.2s;
+  padding: 0 4px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.history-item:hover .delete-chat-btn {
+  opacity: 0.55;
+}
+
+.history-item .delete-chat-btn:hover {
+  opacity: 1;
+  color: var(--color-danger);
+  text-shadow: 0 0 8px var(--color-danger-glow);
+  background: rgba(255, 42, 109, 0.08);
+}
+
+/* Main Chat Area Box */
+.main-chat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  transition: all 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
+  position: relative;
+}
+
+/* HUD System Header Panel */
+.hud-header {
+  padding: 0 30px;
+  height: 76px;
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  background: rgba(8, 12, 28, 0.4);
+  backdrop-filter: blur(10px);
+  z-index: 90;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  flex: 1;
+  min-width: 0;
+  padding-left: 10px;
+}
+
+.session-info {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.session-text {
+  font-family: var(--font-title);
+  color: var(--color-text-muted);
+  font-size: 0.82rem;
+  letter-spacing: 2px;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.warning-text {
+  font-family: var(--font-title);
+  color: var(--color-danger);
+  text-shadow: 0 0 10px var(--color-danger-glow);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+/* Integrated Header Toggle Button */
+.sidebar-toggle {
+  background: rgba(0, 240, 255, 0.06);
+  border: 1px solid rgba(0, 240, 255, 0.2);
+  border-radius: 4px;
+  color: var(--color-primary);
+  font-family: var(--font-tech);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.sidebar-toggle:hover {
+  background: rgba(0, 240, 255, 0.15);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 12px var(--color-primary-glow);
+  transform: scale(1.02);
+}
+
+.sidebar-toggle:active {
+  transform: scale(0.98);
+}
+
+/* Advanced Telemetry Panel */
+.system-telemetry {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  font-family: var(--font-tech);
+  font-size: 0.72rem;
+  letter-spacing: 1.5px;
+}
+
+.telemetry-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.telemetry-item .label {
+  color: var(--color-text-muted);
+}
+
+.telemetry-item .value {
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 600;
+}
+
+.telemetry-item .value.success {
+  color: var(--color-success);
+  text-shadow: 0 0 6px rgba(5, 255, 155, 0.25);
+}
+
+.telemetry-item .value.active {
+  color: var(--color-primary);
+  text-shadow: 0 0 6px rgba(0, 240, 255, 0.25);
+}
+
+/* Chat Feed Box */
+.chat-feed {
+  flex: 1;
+  padding: 30px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.message-row {
+  display: flex;
+  gap: 15px;
+  align-items: flex-start;
+  max-width: 85%;
+  animation: slide-fade-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.message-row.user {
+  margin-left: auto;
+  flex-direction: row; /* Standard arrangement user-avatar on right */
+}
+
+/* Avatars Design */
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: 0.95rem;
+  flex-shrink: 0;
+  position: relative;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+}
+
+.selah-avatar {
+  background: rgba(0, 240, 255, 0.08);
+  color: var(--color-primary);
+  border: 1px solid var(--color-primary);
+  box-shadow: 0 0 10px var(--color-primary-glow);
+}
+
+.user-avatar {
+  background: rgba(157, 78, 221, 0.08);
+  color: var(--color-secondary);
+  border: 1px solid var(--color-secondary);
+  box-shadow: 0 0 10px var(--color-secondary-glow);
+}
+
+/* High-End Cyberpunk Message Bubbles */
+.message-bubble {
+  padding: 16px 20px;
+  line-height: 1.6;
+  font-size: 0.94rem;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  position: relative;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* Selah Message Bubble: Glowing Cyber-Left line */
+.message-bubble.selah {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-left: 3px solid var(--color-primary);
+  border-radius: 0px 12px 12px 12px;
+}
+
+.message-bubble.selah::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  left: -3px;
+  width: 10px;
+  height: 10px;
+  border-top: 1px solid var(--color-primary);
+  border-left: 1px solid var(--color-primary);
+  pointer-events: none;
+}
+
+/* User Message Bubble: Angled Corner */
+.message-bubble.user {
+  background: linear-gradient(135deg, rgba(157, 78, 221, 0.15) 0%, rgba(99, 102, 241, 0.1) 100%);
+  border: 1px solid rgba(157, 78, 221, 0.25);
+  border-right: 3px solid var(--color-secondary);
+  border-radius: 12px 0px 12px 12px;
+  box-shadow: 0 4px 25px rgba(157, 78, 221, 0.05);
+}
+
+/* Markdown bold highlights inside bubble */
+strong {
+  color: var(--color-primary);
+  font-weight: 600;
+  text-shadow: 0 0 10px var(--color-primary-glow);
+}
+
+/* Micro-Typing Indicator */
+.typing-indicator {
+  padding: 16px 24px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-left: 3px solid var(--color-primary);
+  border-radius: 0px 12px 12px 12px;
+  display: flex;
+  gap: 4px;
+}
+
+.typing-indicator span {
+  animation: typing-anim 1.4s infinite ease-in-out both;
+  color: var(--color-primary);
+  font-weight: bold;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
+.typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+
+/* Glowing Input Shell Terminal */
+.input-terminal {
+  padding: 24px 30px;
+  background: rgba(4, 5, 12, 0.65);
+  border-top: 1px solid var(--color-border);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  position: relative;
+  z-index: 80;
+}
+
+.input-terminal::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--color-primary), transparent);
+  opacity: 0.3;
+}
+
+/* Shell blinking prompt block */
+.terminal-prefix {
+  color: var(--color-primary);
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: 1.1rem;
+  text-shadow: 0 0 8px var(--color-primary-glow);
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.terminal-prefix::after {
+  content: "_";
+  color: var(--color-primary);
+  animation: blink 1s infinite steps(2);
+  margin-left: 4px;
+}
+
+.hud-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 0.96rem;
+  font-family: var(--font-terminal);
+  outline: none;
+  padding: 10px 5px;
+  letter-spacing: 0.5px;
+  transition: all 0.3s;
+}
+
+.hud-input::placeholder {
+  color: rgba(255, 255, 255, 0.25);
+  font-style: italic;
+  letter-spacing: 0.5px;
+}
+
+/* Animations */
+@keyframes slide-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 0.65;
+    box-shadow: 0 0 4px var(--color-success);
+  }
+  50% {
+    opacity: 1;
+    box-shadow: 0 0 12px var(--color-success);
+  }
+}
+
+@keyframes typing-anim {
+  0%, 80%, 100% {
+    transform: translateY(0);
+    opacity: 0.2;
+  }
+  40% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 0; }
+  50% { opacity: 1; }
+}
+
+.pulse-anim {
+  animation: pulse-glow 2s infinite ease-in-out;
+}
+
+/* ==========================================================================
+   RESPONSIVE DESIGN & SIDEBAR WORKFLOW
+   ========================================================================== */
+
+/* 1. Desktop & Tablet Mode (Docked sidebar by default) */
+@media (min-width: 768px) {
+  
+  /* Sidebar is persistent & docked */
+  .sidebar {
+    position: relative;
+    left: 0 !important;
+    display: flex !important;
+  }
+
+  /* When sidebar is collapsed on desktop, slide it out and hide completely */
+  .sidebar.collapsed {
+    width: 0;
+    border-right-color: transparent;
+    opacity: 0;
+    pointer-events: none;
+    box-shadow: none;
+  }
+
+  /* Main chat adjusts smoothly */
+  .main-chat {
+    flex: 1;
+  }
+
+  /* Overlays are not needed on desktop */
+  .sidebar-overlay {
+    display: none;
+  }
+  
+  /* Show menu text on button */
+  .sidebar-toggle .toggle-text {
+    display: inline;
+  }
+}
+
+/* 2. Mobile Mode (Drawer overlay sidebar) */
+@media (max-width: 767px) {
+  
+  /* Mobile container overlays drawer off-screen left by default */
+  .sidebar {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: -325px; /* Fully hidden offscreen */
+    width: 290px;
+    height: 100%;
+    border-right: 1px solid var(--color-border);
+    box-shadow: none;
+  }
+
+  /* When drawer is explicitly toggled open */
+  .sidebar.open {
+    left: 0 !important;
+    box-shadow: 15px 0 40px rgba(0, 0, 0, 0.8);
+  }
+
+  /* In mobile, toggle buttons do not expand/collapse docked structures */
+  .sidebar.collapsed {
+    width: 290px;
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* Show close button on mobile sidebar */
+  .close-btn {
+    display: block;
+  }
+
+  /* Mobile sidebar backdrop overlay visible when active */
+  .sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(3, 4, 10, 0.7);
+    backdrop-filter: blur(4px);
+    z-index: 105;
+    animation: slide-fade-in 0.25s ease-out;
+  }
+
+  /* Compact header on mobile screens */
+  .hud-header {
+    padding: 0 15px;
+    height: 68px;
+  }
+
+  .sidebar-toggle .toggle-text {
+    display: none; /* Icon-only menu on mobile */
+  }
+
+  .system-telemetry {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .system-telemetry .telemetry-item:not(:last-child) {
+    display: none; /* Hide text stats on mobile, only keep the telemetry-toggle button! */
+  }
+
+  .telemetry-toggle {
+    padding: 8px 10px;
+  }
+
+  .telemetry-toggle .telemetry-toggle-text {
+    display: none; /* Icon-only (⚡) toggle button on mobile to save space */
+  }
+
+  .header-left {
+    padding-left: 5px;
+  }
+  
+  .chat-feed {
+    padding: 15px;
+  }
+
+  .message-row {
+    max-width: 95%;
+  }
+
+  .input-terminal {
+    padding: 12px 10px;
+    gap: 8px;
+  }
+
+  .input-terminal .hud-button {
+    padding: 8px 12px;
+    font-size: 0.72rem;
+    letter-spacing: 1px;
+    flex-shrink: 0; /* Force button to keep its full visual shape on mobile */
+  }
+
+  .hud-input {
+    font-size: 0.85rem;
+    padding: 6px 4px;
+    min-width: 0; /* Let input size down dynamically instead of squishing button */
+  }
+}
+
+/* ==========================================================================
+   SELAH_OS ADAPTIVE AI PERSONAS & NEURAL HUD GAUGES
+   ========================================================================== */
+
+/* Persona CSS Variables Overrides with smooth Transitions */
+.app-container {
+  transition: background 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.app-container.coach-theme {
+  --color-primary: #d857ff;
+  --color-primary-glow: rgba(216, 87, 255, 0.35);
+  --color-primary-dim: rgba(216, 87, 255, 0.12);
+  --color-secondary: #ff2a80;
+  --color-secondary-glow: rgba(255, 42, 128, 0.35);
+  --color-border: rgba(216, 87, 255, 0.2);
+  background: radial-gradient(circle at 50% 50%, #200a2b 0%, var(--color-bg-deep) 100%);
+}
+.app-container.coach-theme .bg-glow.top-left {
+  background: radial-gradient(circle, rgba(216, 87, 255, 0.14) 0%, transparent 70%);
+}
+.app-container.coach-theme .bg-glow.bottom-right {
+  background: radial-gradient(circle, rgba(255, 42, 128, 0.1) 0%, transparent 70%);
+}
+
+.app-container.sage-theme {
+  --color-primary: #ffb703;
+  --color-primary-glow: rgba(255, 183, 3, 0.35);
+  --color-primary-dim: rgba(255, 183, 3, 0.12);
+  --color-secondary: #05ff9b;
+  --color-secondary-glow: rgba(5, 255, 155, 0.35);
+  --color-border: rgba(255, 183, 3, 0.2);
+  background: radial-gradient(circle at 50% 50%, #1a1608 0%, var(--color-bg-deep) 100%);
+}
+.app-container.sage-theme .bg-glow.top-left {
+  background: radial-gradient(circle, rgba(255, 183, 3, 0.12) 0%, transparent 70%);
+}
+.app-container.sage-theme .bg-glow.bottom-right {
+  background: radial-gradient(circle, rgba(5, 255, 155, 0.1) 0%, transparent 70%);
+}
+
+/* Right Telemetry Sidebar Layout */
+.telemetry-panel {
+  width: 340px;
+  height: 100%;
+  border-left: 1px solid var(--color-border);
+  background: var(--color-sidebar-glass);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  z-index: 100;
+  transition: all 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
+  overflow: hidden;
+  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.6);
+  position: relative;
+}
+
+/* Toggleable states on desktop/tablets */
+.hud-glass.telemetry-open .telemetry-panel {
+  width: 340px;
+  opacity: 1;
+}
+
+.hud-glass:not(.telemetry-open) .telemetry-panel {
+  width: 0;
+  border-left-color: transparent;
+  opacity: 0;
+  pointer-events: none;
+  box-shadow: none;
+}
+
+.telemetry-panel-header {
+  padding: 24px;
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(0, 240, 255, 0.02);
+  position: relative;
+}
+
+.telemetry-panel-header h3 {
+  margin: 0;
+  font-family: var(--font-title);
+  font-size: 0.9rem;
+  letter-spacing: 2px;
+  color: var(--color-text-bright);
+}
+
+.telemetry-panel-header::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  right: 0;
+  width: 60px;
+  height: 2px;
+  background-color: var(--color-primary);
+  box-shadow: 0 0 10px var(--color-primary);
+}
+
+.telemetry-close {
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  transition: color 0.2s;
+  display: none; /* Only show on mobile drawer version */
+}
+
+.telemetry-panel-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* HUD Cards system */
+.hud-card {
+  background: rgba(255, 255, 255, 0.015);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 4px;
+  padding: 16px;
+  position: relative;
+  box-shadow: inset 0 0 15px rgba(255, 255, 255, 0.01);
+  transition: border-color 0.3s, background 0.3s;
+}
+
+.hud-card:hover {
+  border-color: rgba(0, 240, 255, 0.15);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.hud-card-header {
+  font-family: var(--font-title);
+  font-size: 0.68rem;
+  color: var(--color-text-muted);
+  letter-spacing: 1.5px;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  font-weight: 700;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  padding-bottom: 6px;
+}
+
+/* Persona Selector buttons inside panel */
+.persona-selector {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.persona-btn {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 8px 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.persona-btn .p-icon {
+  font-size: 1rem;
+}
+
+.persona-btn .p-label {
+  font-family: var(--font-tech);
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: var(--color-text-muted);
+}
+
+.persona-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.persona-btn.active.os-btn {
+  background: rgba(0, 240, 255, 0.08);
+  border-color: #00f0ff;
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.25);
+}
+.persona-btn.active.os-btn .p-label { color: #00f0ff; }
+
+.persona-btn.active.coach-btn {
+  background: rgba(216, 87, 255, 0.08);
+  border-color: #d857ff;
+  box-shadow: 0 0 10px rgba(216, 87, 255, 0.25);
+}
+.persona-btn.active.coach-btn .p-label { color: #d857ff; }
+
+.persona-btn.active.sage-btn {
+  background: rgba(255, 183, 3, 0.08);
+  border-color: #ffb703;
+  box-shadow: 0 0 10px rgba(255, 183, 3, 0.25);
+}
+.persona-btn.active.sage-btn .p-label { color: #ffb703; }
+
+.persona-desc {
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+/* Quick Action Chips */
+.action-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.action-chip {
+  background: rgba(0, 240, 255, 0.02);
+  color: var(--color-text-bright);
+  border: 1px solid rgba(0, 240, 255, 0.12);
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-family: var(--font-tech);
+  font-size: 0.72rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.action-chip:hover {
+  background: var(--color-primary-dim);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 8px var(--color-primary-glow);
+  transform: translateY(-1px);
+}
+
+/* Metrics stats HUD row */
+.metric-row-hud {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  font-family: var(--font-tech);
+  font-size: 0.8rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+}
+
+.metric-row-hud:last-child {
+  border-bottom: none;
+}
+
+.metric-row-hud .m-label {
+  color: var(--color-text-muted);
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+.metric-row-hud .m-val {
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.m-val.success {
+  color: var(--color-success);
+  text-shadow: 0 0 8px var(--color-success-glow);
+}
+
+.m-val.warning {
+  color: #ffb703;
+  text-shadow: 0 0 8px rgba(255, 183, 3, 0.3);
+}
+
+.m-val.danger {
+  color: var(--color-danger);
+  text-shadow: 0 0 8px var(--color-danger-glow);
+}
+
+/* Goals Progression Columns */
+.goals-meters {
+  display: flex;
+  gap: 8px;
+  justify-content: space-around;
+  padding: 4px 0;
+}
+
+.g-meter-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+}
+
+.g-meter-val {
+  font-family: var(--font-title);
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.g-meter-val.success { color: var(--color-success); text-shadow: 0 0 10px var(--color-success-glow); }
+.g-meter-val.primary { color: var(--color-primary); text-shadow: 0 0 10px var(--color-primary-glow); }
+.g-meter-val.warning { color: #ffb703; text-shadow: 0 0 10px rgba(255, 183, 3, 0.25); }
+
+.g-meter-lbl {
+  font-family: var(--font-tech);
+  font-size: 0.58rem;
+  color: var(--color-text-muted);
+  letter-spacing: 1px;
+}
+
+/* Anchor tags styling */
+.anchors-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.anchor-tag {
+  background: rgba(157, 78, 221, 0.04);
+  color: var(--color-secondary);
+  border: 1px solid rgba(157, 78, 221, 0.15);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-family: var(--font-tech);
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.triggers-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.trigger-tag {
+  background: rgba(255, 42, 109, 0.04);
+  color: var(--color-danger);
+  border: 1px solid rgba(255, 42, 109, 0.15);
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-family: var(--font-tech);
+  font-size: 0.74rem;
+  font-weight: 600;
+}
+
+.no-data {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+.success-text {
+  color: var(--color-success) !important;
+}
+
+/* Loading animations */
+.hud-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 0;
+}
+
+.hud-loading span {
+  font-family: var(--font-tech);
+  font-size: 0.65rem;
+  color: var(--color-text-muted);
+  letter-spacing: 1px;
+}
+
+.loading-bar-hud {
+  width: 100px;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.05);
+  position: relative;
+  overflow: hidden;
+  border-radius: 2px;
+}
+
+.loading-progress-hud {
+  width: 40%;
+  height: 100%;
+  background: var(--color-primary);
+  box-shadow: 0 0 8px var(--color-primary);
+  position: absolute;
+  left: -40%;
+  animation: loading-hud-anim 1.5s infinite linear;
+}
+
+@keyframes loading-hud-anim {
+  0% { left: -40%; }
+  100% { left: 100%; }
+}
+
+/* Header Toggle Button for Telemetry */
+.telemetry-toggle {
+  background: rgba(0, 240, 255, 0.06);
+  border: 1px solid rgba(0, 240, 255, 0.2);
+  border-radius: 4px;
+  color: var(--color-primary);
+  font-family: var(--font-tech);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.telemetry-toggle:hover {
+  background: rgba(0, 240, 255, 0.15);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 12px var(--color-primary-glow);
+  transform: scale(1.02);
+}
+
+.telemetry-toggle:active {
+  transform: scale(0.98);
+}
+
+/* Responsive adjustment for Mobile/Tablet Sidebar Drawer version */
+@media (max-width: 991px) {
+  .hud-glass:not(.telemetry-open) .telemetry-panel {
+    display: none;
+  }
+  .telemetry-panel {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: -345px;
+    width: 320px;
+    box-shadow: -15px 0 45px rgba(0, 0, 0, 0.85);
+  }
+  .telemetry-panel.open {
+    right: 0 !important;
+  }
+  .telemetry-close {
+    display: block; /* Close x button on mobile sidebar */
+  }
+}
+
+/* ==========================================================================
+   SELAH_OS SCREEN RADAR SCANNER & TERMINAL CONSOLE
+   ========================================================================== */
+
+/* Screen Scanner Radar HUD & Pulse laser sweeps */
+.screen-scanner-card {
+  position: relative;
+}
+
+.scanner-radar-hud {
+  position: relative;
+  width: 100%;
+  padding: 8px 0;
+}
+
+.radar-grid-bg {
+  position: relative;
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 240, 255, 0.15);
+  background: radial-gradient(circle, rgba(0, 240, 255, 0.03) 0%, transparent 80%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 0 15px rgba(0, 240, 255, 0.05);
+  transition: border-color 0.5s ease;
+}
+
+.os-theme .radar-grid-bg { border-color: rgba(0, 240, 255, 0.25); }
+.coach-theme .radar-grid-bg { border-color: rgba(216, 87, 255, 0.25); }
+.sage-theme .radar-grid-bg { border-color: rgba(255, 183, 3, 0.25); }
+
+.radar-circle {
+  position: absolute;
+  border: 1px dashed rgba(255, 255, 255, 0.08);
+  border-radius: 50%;
+}
+
+.radar-circle.ring-1 {
+  width: 80px;
+  height: 80px;
+  animation: pulse-ring 4s infinite linear;
+}
+
+.radar-circle.ring-2 {
+  width: 45px;
+  height: 45px;
+}
+
+.radar-crosshair-h {
+  position: absolute;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+}
+
+.radar-crosshair-v {
+  position: absolute;
+  height: 100%;
+  width: 1px;
+  background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+}
+
+.radar-sweep-bar {
+  position: absolute;
+  width: 50%;
+  height: 2px;
+  background: linear-gradient(90deg, var(--color-primary), transparent);
+  top: 50%;
+  left: 50%;
+  transform-origin: left center;
+  transform: rotate(0deg);
+  animation: radar-sweep-anim 4s infinite linear;
+  box-shadow: 0 0 8px var(--color-primary-glow);
+  z-index: 5;
+}
+
+.radar-sweep-bar.scanning {
+  animation: radar-sweep-anim 1s infinite linear;
+  background: linear-gradient(90deg, var(--color-primary), transparent);
+}
+
+@keyframes radar-sweep-anim {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(0.85); opacity: 0.3; }
+  50% { opacity: 0.8; }
+  100% { transform: scale(1.15); opacity: 0.15; }
+}
+
+.scanning-btn {
+  background: var(--color-primary-dim) !important;
+  color: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+  animation: pulse-glow 1.5s infinite ease-in-out;
+}
+
+/* Screen Analysis results display */
+.screen-analysis-result {
+  margin-top: 14px;
+  background: rgba(0, 0, 0, 0.25);
+  border-left: 2px solid var(--color-primary);
+  border-radius: 2px;
+  padding: 12px;
+  max-height: 250px;
+  overflow-y: auto;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.4);
+}
+
+.analysis-text-block {
+  font-family: var(--font-tech);
+  font-size: 0.76rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.analysis-text-block strong {
+  color: var(--color-primary);
+}
+
+/* Slide in HUD visual effect */
+.slide-in-hud {
+  animation: slide-hud 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes slide-hud {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* OS Control Terminal Shell Console */
+.os-terminal-card {
+  margin-top: 8px;
+}
+
+.os-terminal-shell {
+  background: #04050b;
+  border: 1px solid rgba(0, 240, 255, 0.1);
+  border-radius: 4px;
+  padding: 12px;
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.terminal-logs-hud {
+  font-family: 'Space Grotesk', 'Courier New', monospace;
+  font-size: 0.74rem;
+  color: #05ff9b;
+  min-height: 120px;
+  max-height: 180px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 4px;
+  scroll-behavior: smooth;
+  border-bottom: 1px solid rgba(0, 240, 255, 0.05);
+}
+
+.log-line-system {
+  color: #64748b;
+}
+
+.log-line-user {
+  color: var(--color-primary);
+  font-weight: 500;
+  text-shadow: 0 0 5px var(--color-primary-glow);
+}
+
+.log-line-result {
+  color: #f1f5f9;
+  white-space: pre-wrap;
+  background: rgba(255, 255, 255, 0.01);
+  padding: 4px 6px;
+  border-radius: 2px;
+  border-left: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Shell Prompt input field styling */
+.terminal-shell-input {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.01);
+  border-radius: 2px;
+  padding: 2px 6px;
+}
+
+.shell-symbol {
+  color: var(--color-primary);
+  font-family: var(--font-title);
+  font-weight: bold;
+  font-size: 0.85rem;
+  text-shadow: 0 0 5px var(--color-primary-glow);
+}
+
+.shell-input-field {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #f1f5f9;
+  font-family: 'Space Grotesk', monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.5px;
+  padding: 4px 0;
+}
+
+.shell-input-field::placeholder {
+  color: rgba(255, 255, 255, 0.15);
+  font-style: italic;
+}
+
+/* Custom Cyber Code Block inside Chat Feed */
+.cyber-code-block-container {
+  background: #04050b;
+  border: 1px solid rgba(0, 240, 255, 0.15);
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5), inset 0 0 10px rgba(0, 240, 255, 0.05);
+  margin: 14px 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.cyber-code-header {
+  background: rgba(0, 240, 255, 0.04);
+  border-bottom: 1px solid rgba(0, 240, 255, 0.1);
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cyber-code-lang {
+  font-family: var(--font-title);
+  font-size: 0.68rem;
+  letter-spacing: 1.5px;
+  color: var(--color-primary);
+  font-weight: 700;
+  text-shadow: 0 0 5px var(--color-primary-glow);
+}
+
+.cyber-status-pulse {
+  width: 6px;
+  height: 6px;
+  background-color: var(--color-success);
+  border-radius: 50%;
+  box-shadow: 0 0 6px var(--color-success);
+  animation: pulse-glow 2s infinite ease-in-out;
+}
+
+.cyber-code-pre {
+  margin: 0;
+  padding: 12px;
+  background: transparent;
+  overflow-x: auto;
+}
+
+.cyber-code-pre code {
+  font-family: 'Space Grotesk', 'Courier New', monospace;
+  font-size: 0.8rem;
+  color: #05ff9b;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.cyber-code-actions {
+  display: flex;
+  border-top: 1px solid rgba(0, 240, 255, 0.08);
+}
+
+.cyber-code-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 10px;
+  font-family: var(--font-tech);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s;
+  color: var(--color-text-muted);
+}
+
+.cyber-code-btn:first-child {
+  border-right: 1px solid rgba(0, 240, 255, 0.08);
+}
+
+.cyber-code-btn.copy-btn:hover {
+  background: rgba(5, 255, 155, 0.06);
+  color: var(--color-success);
+  text-shadow: 0 0 6px var(--color-success-glow);
+}
+
+.cyber-code-btn.run-btn {
+  color: var(--color-primary);
+}
+
+.cyber-code-btn.run-btn:hover {
+  background: rgba(0, 240, 255, 0.06);
+  color: #fff;
+  text-shadow: 0 0 8px var(--color-primary-glow);
+}
+
+.cyber-code-btn:active {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* Inline single backtick tag styling */
+.inline-cyber-code {
+  font-family: 'Space Grotesk', monospace;
+  background: rgba(0, 240, 255, 0.08);
+  border: 1px solid rgba(0, 240, 255, 0.2);
+  color: var(--color-primary);
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  text-shadow: 0 0 4px var(--color-primary-glow);
+}
+
+/* Inline Chat Session Rename Input */
+.rename-chat-input {
+  flex: 1;
+  background: rgba(4, 5, 11, 0.9) !important;
+  border: 1px solid var(--color-primary) !important;
+  border-radius: 4px;
+  color: #fff !important;
+  font-family: var(--font-tech);
+  font-size: 0.82rem;
+  padding: 4px 8px;
+  outline: none;
+  box-shadow: 0 0 10px var(--color-primary-dim);
+  width: 100%;
+}
+
+/* Custom Cyber Context Menu */
+.cyber-context-menu {
+  position: absolute;
+  z-index: 10000;
+  background: rgba(8, 12, 28, 0.95);
+  border: 1px solid rgba(0, 240, 255, 0.2);
+  border-radius: 6px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 15px var(--color-primary-dim);
+  backdrop-filter: blur(10px);
+  padding: 6px 0;
+  width: 170px;
+  display: flex;
+  flex-direction: column;
+  animation: slide-hud 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.context-menu-item {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: rgba(255, 255, 255, 0.75);
+  font-family: var(--font-tech);
+  font-size: 0.76rem;
+  font-weight: 500;
+  padding: 10px 16px;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+
+.context-menu-item:hover {
+  background: rgba(0, 240, 255, 0.08);
+  color: var(--color-primary);
+  text-shadow: 0 0 6px var(--color-primary-glow);
+}
+
+.context-menu-item.danger:hover {
+  background: rgba(255, 42, 109, 0.08);
+  color: var(--color-danger);
+  text-shadow: 0 0 6px var(--color-danger-glow);
+}
+
+/* ==========================================================================
+   SELAH_OS NEURAL LINK SETTINGS
+   ========================================================================== */
+
+.cyber-settings-panel {
+  margin-top: auto; /* Push it to the bottom of the sidebar */
+  padding: 15px;
+  background: rgba(3, 5, 12, 0.6);
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.settings-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.settings-lbl {
+  font-family: var(--font-title);
+  font-size: 0.6rem;
+  letter-spacing: 1.5px;
+  color: var(--color-text-muted);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+/* Model Selector neon toggle bar */
+.model-toggle-hud {
+  display: flex;
+  background: rgba(4, 5, 11, 0.9);
+  border: 1px solid rgba(0, 240, 255, 0.15);
+  border-radius: 4px;
+  overflow: hidden;
+  padding: 2px;
+}
+
+.model-toggle-hud .toggle-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: var(--font-tech);
+  font-size: 0.66rem;
+  font-weight: 600;
+  padding: 6px 4px;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+  text-align: center;
+}
+
+.model-toggle-hud .toggle-btn.active {
+  background: var(--color-primary-dim);
+  color: var(--color-primary);
+  text-shadow: 0 0 6px var(--color-primary-glow);
+  box-shadow: inset 0 0 8px rgba(0, 240, 255, 0.2);
+}
+
+.model-toggle-hud .toggle-btn:hover:not(.active) {
+  color: var(--color-text-bright);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* Input container for custom key with clear button */
+.settings-input-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.settings-input {
+  width: 100% !important;
+  font-size: 0.74rem !important;
+  padding: 8px 30px 8px 10px !important; /* Save space on the right for clear button */
+  background: rgba(4, 5, 11, 0.9) !important;
+  border: 1px solid rgba(0, 240, 255, 0.15) !important;
+  border-radius: 4px !important;
+  color: #fff !important;
+  font-family: var(--font-tech);
+}
+
+.settings-input:focus {
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 8px var(--color-primary-glow) !important;
+}
+
+.clear-key-btn {
+  position: absolute;
+  right: 8px;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--color-danger);
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  padding: 0;
+  width: 16px;
+  height: 16px;
+  opacity: 0.6;
+}
+
+.clear-key-btn:hover {
+  opacity: 1;
+  text-shadow: 0 0 6px var(--color-danger-glow);
+  transform: scale(1.1);
 }
